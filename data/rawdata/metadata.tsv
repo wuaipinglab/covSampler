@@ -1,0 +1,3 @@
+# Download from GISAID (https://www.gisaid.org/) -> EpiCoV -> Downloads -> Genomic epidemiology -> metadata (Contact GISAID Support Team to request access)
+# Head
+strain	virus	gisaid_epi_isl	genbank_accession	date	region	country	division	location	region_exposure	country_exposure	division_exposure	segment	length	host	age	sex	Nextstrain_clade	pango_lineage	GISAID_clade	originating_lab	submitting_lab	authors	url	title	paper_url	date_submitted	purpose_of_sequencing
