@@ -3,7 +3,7 @@ import math
 import time
 import subprocess
 
-DATE = '2022-03-30' # data version
+DATE = '2022-04-16' # data version
 REF = 'EPI_ISL_402125' # GISAID accession id of SARS-CoV-2 reference genome 
 CORES = 12
 
