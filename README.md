@@ -35,7 +35,7 @@ Here, we developed a subsampling method named **covSampler** based on the spatio
 
     (4) Sequences in each month within divergent pathways were divided by haplotype.
 
-- Then, each continent, divergent pathway, month and viral haplotype in the original data set was assigned an expected number of subsamples. Representative subsampling and comprehensive subsampling were performed using different strategies to assign the number of subsamples
+- Then, each continent, divergent pathway, month and viral haplotype in the original data set was assigned an expected number of subsamples. Representative subsampling and comprehensive subsampling were performed using different strategies to assign the number of subsamples.
 
 ## Usage
 1. Run `covSampler/covSampler.py` to prepare the data for subsampling.
