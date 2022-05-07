@@ -12,11 +12,9 @@ from covSampler import genome_path, meta_path, snps_path, nonsynonymous_path
 def get_new_codon(codon, change_base, change_base_pos):
     '''
     get codon after single site mutation
-
     :param codon: str, codon before mutation
     :param change_base: str, mutated base
     :param change_base_pos: int, position of mutated base in codon [1-3]
-
     :return: str, codon after single site mutation
     '''
     if change_base_pos == 1:
@@ -30,9 +28,7 @@ def get_new_codon(codon, change_base, change_base_pos):
 def get_nonsynonymous_mutation(genome):
     '''
     get nonsynonymous mutations in SARS-CoV-2 whole genome
-
     :param genome: df, SARS-CoV-2 genome information (gene, product, aaPos, peptidePos, aa, genomePos, nucleotide)
-
     :return: list, nonsynonymous mutations in SARS-CoV-2 whole genome
     '''
     nonsynonymous = []
@@ -55,9 +51,7 @@ def get_nonsynonymous_mutation(genome):
 def read_seq(file):
     '''
     read sequence snps from snps.txt
-
     :param file: str, snps file path
-
     :return: dict, key: accession id; value: snps
     '''
     seqs = {}
@@ -89,7 +83,6 @@ def main():
         # get groups (nonsynonymous mutation + continent) that the sequence is in
         continent = seq_continent[i]
         seq_nonsynonymous = list(set(seqs[i]) & set(nonsynonymous))
-        seq_nonsynonymous.sort()
         for n in seq_nonsynonymous:
             groups.setdefault(n+'_'+continent, []).append(i)
 
