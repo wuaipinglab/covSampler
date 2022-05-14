@@ -579,7 +579,7 @@ def main():
     args = parser.parse_args()
 
     # data version
-    DATE = '2022-04-16'
+    DATE = '2022-05-05'
 
     # files required for subsampling
     DIRPATH = args.dirpath

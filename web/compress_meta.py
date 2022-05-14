@@ -6,7 +6,7 @@ import os
 import pandas as pd
 import subprocess
 
-DATE = '2022-04-16'
+DATE = '2022-05-05'
 
 DIRPATH = os.path.join('/datadirectory/', DATE)
 
