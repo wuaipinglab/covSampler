@@ -9,11 +9,11 @@ divergent pathways <--> networks,
           (haplotype sequence is a short pseudo sequence composed of key sites of genome)
 '''
 
+import argparse
 import warnings
 from multiprocessing import Pool
+from datetime import datetime
 import pandas as pd
-from covSampler import CORES, meta_path, haplotype_sequence_path, divergent_pathway_path
-from get_key_sites import calculate_day
 
 
 def read_haplotype_sequence(file):
@@ -55,6 +55,24 @@ def group_by_division(seq_vs, meta):
     return seq_groups
 
 
+def calculate_day(date_1, date_2):
+    '''
+    calculate number of days between two dates
+
+    :param date_1: str, date one (YYYY-MM-DD)
+    :param date_2: str, date two (YYYY-MM-DD)
+
+    :return: int, number of days between two dates
+    '''
+    year_1 = int(date_1.split('-')[0])
+    month_1 = int(date_1.split('-')[1])
+    day_1 = int(date_1.split('-')[2])
+    year_2 = int(date_2.split('-')[0])
+    month_2 = int(date_2.split('-')[1])
+    day_2 = int(date_2.split('-')[2])
+    return (datetime(year_2, month_2, day_2) - datetime(year_1, month_1, day_1)).days
+
+
 def is_linked(seq_one, seq_two):
     '''
     determine if the hamming distance between the haplotype sequences of two sequences <= 1
@@ -72,7 +90,7 @@ def is_linked(seq_one, seq_two):
         return True
 
 
-def construct_pathway(seq_groups_core, submeta, seq_vs):
+def construct_pathway(seq_groups_thread, submeta, seq_vs):
     '''
     construct divergent pathways
     Note: the divergent pathways are similar with networks, where
@@ -84,20 +102,22 @@ def construct_pathway(seq_groups_core, submeta, seq_vs):
           * not all links (edges) are calculated, we just cluster the sequences by the theory of networks
             the clustering results of simplified calculation and full calculation are the same
 
-    :param seq_groups_core: list, group(s) of sequences (group <-> division)
+    :param seq_groups_thread: list, group(s) of sequences (group <-> division)
     :param submeta: dict, key: accession id; value: date
     :param seq_vs: dict, key: accession; value: snps at key sites
     
     :return: list, divergent pathways
     '''
-    subpathways_core = []
+    subpathways_thread = []
     # construct divergent pathways of each group (division)
-    for seq_group in seq_groups_core:
+    for seq_group in seq_groups_thread:
         # sort sequence by date
         seq_group = sorted(seq_group, key=lambda x: submeta[x])
         subpathways = []
+
         # add the first sequence as the first divergent pathway to the empty divergent pathways list
         subpathways.append([seq_group[0]])
+
         # determine the relationship between each subsequent sequence and sequences in existing divergent pathways
         # relationship -> 1. date interval 2. hamming distance between haplotype sequences
         for i in seq_group[1:]:
@@ -109,12 +129,15 @@ def construct_pathway(seq_groups_core, submeta, seq_vs):
                     if is_linked(seq_vs[i], seq_vs[j]):
                         pathway_linked.append(pathway)
                         break
+
             # there is no link between the sequence and sequences in existing divergent pathways
             if len(pathway_linked) == 0:
                 subpathways.append([i])
+            
             # there is (are) link(s) between the sequence and sequence(s) in one existing divergent pathway
             elif len(pathway_linked) == 1:
                 pathway_linked[0].append(i)
+
             # there are links between the sequence and sequences in more than one existing divergent pathway
             else:
                 pathway_merged = [i]
@@ -123,9 +146,10 @@ def construct_pathway(seq_groups_core, submeta, seq_vs):
                     subpathways.remove(pathway)
                 pathway_merged = sorted(pathway_merged, key=lambda x: submeta[x])
                 subpathways.append(pathway_merged)
-        subpathways_core.extend(subpathways)
 
-    return subpathways_core
+        subpathways_thread.extend(subpathways)
+
+    return subpathways_thread
 
 
 def write_new_file(pathway_file, pathways):
@@ -140,28 +164,37 @@ def write_new_file(pathway_file, pathways):
 
 def main():
     warnings.filterwarnings('ignore')
-    meta = pd.read_csv(meta_path, delimiter='\t', index_col=2)
-    seq_vs = read_haplotype_sequence(haplotype_sequence_path)
+
+    # command line interface
+    parser = argparse.ArgumentParser(description='Construct divergent pathways')
+    parser.add_argument('--threads', type=int, required=True, help='Number of threads')
+    parser.add_argument('--haplotypes', required=True, help='Haplotype sequences file')
+    parser.add_argument('--metadata', required=True, help='Metadata file')
+    parser.add_argument('--output', required=True, help='Divergent pathways file')
+    args = parser.parse_args()
+
+    meta = pd.read_csv(args.metadata, delimiter='\t', index_col=2)
+    seq_vs = read_haplotype_sequence(args.haplotypes)
     seq_groups = group_by_division(seq_vs, meta)
     
     # calculate with multiprocessing
-    # each of the top x groups (with more sequences) is calculated with one seperate core
-    # x = CORES - 1
-    # other groups are calculated with the remaining one core
-    seq_groups_cores = []
+    # each of the top x groups (with more sequences) is calculated with one seperate thread
+    # x = threads - 1
+    # other groups are calculated with the remaining one thread
+    seq_groups_threads = []
     seq_groups_merged = []
     for n, i in enumerate(seq_groups, start=1):
-        if n < CORES:
-            seq_groups_cores.append([i])
+        if n < args.threads:
+            seq_groups_threads.append([i])
         else:
             seq_groups_merged.append(i)
-    seq_groups_cores.append(seq_groups_merged)
+    seq_groups_threads.append(seq_groups_merged)
 
     pathways = []
-    p = Pool(CORES)
+    p = Pool(args.threads)
     result_list = []
-    for i in seq_groups_cores:
-        # get accession id, date and snps at key sites of sequences calculated with the core
+    for i in seq_groups_threads:
+        # get accession id, date and snps at key sites of sequences calculated with the thread
         ids = [k for j in i for k in j]
         submeta = meta[meta.index.isin(ids)]['date'].to_dict()
         sub_seq_vs = dict([(key, seq_vs.get(key, None)) for key in ids])
@@ -174,7 +207,7 @@ def main():
 
     pathways = list(sorted(pathways, key=lambda x: len(x), reverse=True))
 
-    write_new_file(divergent_pathway_path, pathways)
+    write_new_file(args.output, pathways)
 
 
 if __name__ == '__main__':

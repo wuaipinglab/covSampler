@@ -5,11 +5,11 @@
 '''
 
 import re
+import argparse
 import warnings
 from multiprocessing import Pool
 import pandas as pd
 from Bio import SeqIO, Phylo
-from covSampler import REF, CORES, tree_path, meta_path, variant_surveillance_path, sequence_path, snps_path
 
 
 def read_seq(file, meta, info_seqs, REF, times):
@@ -151,17 +151,29 @@ def write_new_file(file, seq_snps):
 
 def main():
     warnings.filterwarnings('ignore')
+
+    # command line interface
+    parser = argparse.ArgumentParser(description='Clean genomes')
+    parser.add_argument('--threads', type=int, required=True, help='Number of threads')
+    parser.add_argument('--metadata', required=True, help='Metadata file')
+    parser.add_argument('--msa', required=True, help='Multiple sequence alignment file')
+    parser.add_argument('--surveillance', required=True, help='Variant surveillance file')
+    parser.add_argument('--tree', required=True, help='CoVizu tree file')
+    parser.add_argument('--reference', required=True, help='GISAID Accession ID of SARS-Co-2 reference genome')
+    parser.add_argument('--output', required=True, help='SNPs file')
+    args = parser.parse_args()
+
     # filter sequences in metadata file based on the following criteria:
     # 1. without date, region exposure, country exposure, division exposure and pango lineage
     # 2. with non-human hosts
     # 3. with the pango lineage not in the latest covizu phylogenetic tree (https://filogeneti.ca/CoVizu/)
     # filter sequences in variant surveillance file based on the following criteria:
     # 1. without aa substitutions information
-    tree = Phylo.read(tree_path, "newick")
+    tree = Phylo.read(args.tree, "newick")
     lineages_in_tree = [str(nodes) for nodes in tree.get_terminals()]
-    meta = pd.read_csv(meta_path, delimiter='\t', index_col=2).dropna(axis=0, subset=['date', 'region_exposure', 'country_exposure', 'division_exposure', 'pango_lineage'])
+    meta = pd.read_csv(args.metadata, delimiter='\t', index_col=2).dropna(axis=0, subset=['date', 'region_exposure', 'country_exposure', 'division_exposure', 'pango_lineage'])
     meta = meta[(meta['host'] == 'Human') & (meta['pango_lineage'].isin(lineages_in_tree))]
-    variant_surveillance = pd.read_csv(variant_surveillance_path, delimiter='\t').dropna(axis=0, subset=['AA Substitutions'])
+    variant_surveillance = pd.read_csv(args.surveillance, delimiter='\t').dropna(axis=0, subset=['AA Substitutions'])
     
     # get accession id of sequences with complete information (in filtered metadata and in filtered variant surveillance)
     info_seqs = list(set(meta.index.tolist()) & set(variant_surveillance['Accession ID'].values.tolist()))
@@ -173,12 +185,12 @@ def main():
     seq_snps = {}
     while not finish_all_seq:
         times += 1
-        finish_all_seq, seqs = read_seq(sequence_path, meta['date'].to_dict(), info_seqs, REF, times)
-        sites = get_genome_sites(seqs[REF])
-        ref_genome = trim_seq(seqs[REF], sites)
+        finish_all_seq, seqs = read_seq(args.msa, meta['date'].to_dict(), info_seqs, args.reference, times)
+        sites = get_genome_sites(seqs[args.reference])
+        ref_genome = trim_seq(seqs[args.reference], sites)
 
         result_list = []
-        p = Pool(CORES)
+        p = Pool(args.threads)
         for i in seqs:
             result = p.apply_async(clean_seq, args=(i, seqs[i], sites, ref_genome))
             result_list.append(result)
@@ -190,7 +202,7 @@ def main():
 
     seq_snps = dict(sorted(seq_snps.items(), key=lambda x: int(x[0].split('_')[2])))
 
-    write_new_file(snps_path, seq_snps)
+    write_new_file(args.output, seq_snps)
 
 if __name__ == '__main__':
     main()

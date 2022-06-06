@@ -2,7 +2,6 @@
 subsampling
 '''
 
-import os
 import re
 import time
 import argparse
@@ -69,7 +68,7 @@ def get_target_ids(file, args, genome_path):
     # remove accession id of sequences not in selected date range
     dropDate = []
     for i in target_ids:
-        if not args.dateStart <= infos[i]['date'] <= args.dateEnd:
+        if not args.date_start <= infos[i]['date'] <= args.date_end:
             dropDate.append(i)
     
     target_ids = list(set(target_ids)-set(dropDate))
@@ -542,13 +541,14 @@ def rep_sampling(required_sample_num, seqs, infos, paths_in_continent):
     return rep_samples
 
 
-def write_new_file(file, samples, DATE, args, target_ids):
+def write_new_file(file, samples, args, target_ids):
     with open(file, 'w') as f:
-        f.write('## File time: '+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))+' (Beijing Time)'+'\n')
-        f.write('## Data version: '+DATE+'\n')
+        f.write('## File time: '+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))+'\n')
+        if args.update_version is not None:
+            f.write('## Data version: '+args.update_version+'\n')
         f.write('## Location of samples: '+args.location+'\n')
-        f.write('## Start date of samples: '+args.dateStart+'\n')
-        f.write('## End date of samples: '+args.dateEnd+'\n')
+        f.write('## Start date of samples: '+args.date_start+'\n')
+        f.write('## End date of samples: '+args.date_end+'\n')
         if args.variants is not None:
             for variant in args.variants:
                 f.write('## Variant of samples: '+variant.replace('//','')+'\n') # .replace('//','') -> front end issue
@@ -567,28 +567,22 @@ def write_new_file(file, samples, DATE, args, target_ids):
 
 def main():
     # command line interface
-    parser = argparse.ArgumentParser(description='A subsampling method for large-scale SARS-CoV-2 genomes')
-    parser.add_argument('--dirpath', required=True, help='Data directory path')
+    parser = argparse.ArgumentParser(description='Subsampling')
+    parser.add_argument('--divergent-pathways', required=True, help='Divergent pathways file')
+    parser.add_argument('--genome', required=True, help='SARS-CoV-2 genome file')
+    parser.add_argument('--haplotypes', required=True, help='Haplotype sequences file')
+    parser.add_argument('--infos', required=True, help='Infos file')
+    parser.add_argument('--update-version', help='Update version')
     parser.add_argument('--location', required=True, help='Location of subsamples')
-    parser.add_argument('--dateStart', required=True, help='Start date of subsamples')
-    parser.add_argument('--dateEnd', required=True, help='End date of subsamples')
+    parser.add_argument('--date-start', required=True, help='Start date of subsamples')
+    parser.add_argument('--date-end', required=True, help='End date of subsamples')
     parser.add_argument('--variants', action='append', help='Variants of subsamples')
     parser.add_argument('--size', type=int, required=True, help='Number of subsamples')
     parser.add_argument('--characteristic', required=True, help='Characteristic of subsampling')
-    parser.add_argument('--output', required=True, help='Output directory path')
+    parser.add_argument('--output', required=True, help='Subsamples file')
     args = parser.parse_args()
 
-    # data version
-    DATE = '2022-05-05'
-
-    # files required for subsampling
-    DIRPATH = args.dirpath
-    genome_path = os.path.join(DIRPATH, 'rawdata', 'SARS_CoV_2.csv')
-    seq_info_path = os.path.join(DIRPATH, 'infos.tsv')
-    haplotype_sequence_path = os.path.join(DIRPATH, 'haplotype_sequence.txt')
-    divergent_pathway_path = os.path.join(DIRPATH, 'divergent_pathway.csv')
-
-    infos, target_ids = get_target_ids(seq_info_path, args, genome_path)
+    infos, target_ids = get_target_ids(args.infos, args, args.genome)
     
     # compare number of all sequences in selected range and number of required subsamples
     if args.size > len(target_ids):
@@ -596,17 +590,17 @@ def main():
     else:
         required_sample_num = args.size
 
-    seqs = read_haplotype_sequence(haplotype_sequence_path, target_ids)
+    seqs = read_haplotype_sequence(args.haplotypes, target_ids)
 
-    paths_in_continent = read_path(divergent_pathway_path, target_ids, infos)
+    paths_in_continent = read_path(args.divergent_pathways, target_ids, infos)
 
-    # characteristic of subsampling
+    # subsampling
     if args.characteristic == 'Comprehensive':
         samples = com_sampling(required_sample_num, seqs, infos, paths_in_continent)
     elif args.characteristic == 'Representative':
         samples = rep_sampling(required_sample_num, seqs, infos, paths_in_continent)
 
-    write_new_file(os.path.join(args.output, 'samples.txt'), samples, DATE, args, target_ids)
+    write_new_file(args.output, samples, args, target_ids)
 
 
 if __name__ == '__main__':

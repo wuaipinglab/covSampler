@@ -1,0 +1,7 @@
+configfile: my_profile/parameters.yaml
+
+# Set the maximum number of cores
+cores: 4
+
+# Always print the commands
+printshellcmds: True

@@ -38,8 +38,12 @@ Here, we developed a subsampling method named **covSampler** based on the spatio
 - Then, each continent, divergent pathway, month and viral haplotype in the original data set was assigned an expected number of subsamples. Representative subsampling and comprehensive subsampling were performed using different strategies to assign the number of subsamples.
 
 ## Usage
-1. Run `covSampler/covSampler.py` to prepare the data for subsampling.
-2. Run `covSampler/ncov_sampling.py` for subsampling.
+```
+git clone https://github.com/wuaipinglab/covSampler.git
+conda env create -f environment.yaml
+conda activate covsampler
+Snakemake --profile my_profile
+```
 
 ## Acknowledgements
 We sincerely thank the Global Intiative on Sharing All Influenza Data ([GISAID](https://www.gisaid.org/)) and all data contributors for making SARS-CoV-2 genomic sequence data available to the public and open science.

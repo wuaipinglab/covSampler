@@ -5,10 +5,10 @@ key sites <- genome sites of nonsynonymous mutations that increased in number
              one continent were defined as key sites
 '''
 
+import argparse
 import warnings
 from datetime import datetime
 import pandas as pd
-from covSampler import meta_path, nonsynonymous_path, snps_path, key_site_path
 
 
 def read_mutations(file):
@@ -68,8 +68,10 @@ def is_continuous_increase(subseqs, meta, count_threshold):
     for i in subseqs:
         date = meta.loc[i, 'date']
         dates[date] = dates.get(date, 0) + 1
+
     # get the earliest date of sequences in the group
     first_date = sorted(dates.items(), key=lambda x: x[0])[0][0]
+
     # get number of sequences per day
     days = {}
     for i in dates:
@@ -78,6 +80,7 @@ def is_continuous_increase(subseqs, meta, count_threshold):
     for j in range(1, max(days.keys())):
         days.setdefault(j, 0)
     days = dict(sorted(days.items(), key=lambda x: x[0]))
+
     # get number of sequences per period (seven days / one week)
     counts_period = []
     count_period = 0
@@ -86,6 +89,7 @@ def is_continuous_increase(subseqs, meta, count_threshold):
         if i % 7 == 0 or i == max(days.keys()):
             counts_period.append(count_period)
             count_period = 0
+
     # determine if the number of the nonsynonymous mutation increases for four consecutive weeks in one continent
     if len(counts_period) >= 4:
         for i in range(0, len(counts_period)-3):
@@ -103,8 +107,17 @@ def write_new_file(file, key_sites):
 
 def main():
     warnings.filterwarnings('ignore')
-    seqs_with_mutation = read_mutations(nonsynonymous_path)
-    meta = pd.read_csv(meta_path, delimiter='\t', index_col=2)
+    
+    # command line interface
+    parser = argparse.ArgumentParser(description='Get key sites')
+    parser.add_argument('--metadata', required=True, help='Metadata file')
+    parser.add_argument('--nonsynonymous', required=True, help='Nonsynonymous file')
+    parser.add_argument('--snps', required=True, help='SNPs file')
+    parser.add_argument('--output', required=True, help='Key sites file')
+    args = parser.parse_args()
+
+    seqs_with_mutation = read_mutations(args.nonsynonymous)
+    meta = pd.read_csv(args.metadata, delimiter='\t', index_col=2)
     # calculate the minimum threshold for the number of key nonsynonymous
     # mutations in the first week of four consecutive increasing weeks
 
@@ -112,7 +125,7 @@ def main():
     # | total number | 100,000 | 1,000,000 | 10,000,000 |
     # |  threshold   |    2    |     20    |     200    |
     
-    count_threshold = get_genome_counts(snps_path) / 50000
+    count_threshold = get_genome_counts(args.snps) / 50000
     
     key_sites = []
     for mutation in seqs_with_mutation:
@@ -122,7 +135,7 @@ def main():
     
     key_sites = sorted(key_sites, key=lambda x:int(x))
 
-    write_new_file(key_site_path, key_sites)
+    write_new_file(args.output, key_sites)
 
 if __name__ == '__main__':
     main()

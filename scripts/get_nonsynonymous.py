@@ -3,10 +3,10 @@
 2. get accession id of sequences in each group (group -> nonsynonymous mutation + continent)
 '''
 
+import argparse
 import warnings
 from Bio.Seq import Seq
 import pandas as pd
-from covSampler import genome_path, meta_path, snps_path, nonsynonymous_path
 
 
 def get_new_codon(codon, change_base, change_base_pos):
@@ -78,11 +78,19 @@ def write_new_file(file, groups):
 
 def main():
     warnings.filterwarnings('ignore')
-    genome = pd.read_csv(genome_path, index_col=0)
+
+    # command line interface
+    parser = argparse.ArgumentParser(description='Get nonsynonymous')
+    parser.add_argument('--metadata', required=True, help='Metadata file')
+    parser.add_argument('--genome', required=True, help='SARS-CoV-2 genome file')
+    parser.add_argument('--snps', required=True, help='SNPs file')
+    parser.add_argument('--output', required=True, help='Nonsynonymous file')
+    args = parser.parse_args()
+
+    genome = pd.read_csv(args.genome, index_col=0)
     nonsynonymous = get_nonsynonymous_mutation(genome)
-    
-    seqs = read_seq(snps_path)
-    seq_continent = pd.read_csv(meta_path, delimiter='\t', index_col=2)['region_exposure'].to_dict()
+    seqs = read_seq(args.snps)
+    seq_continent = pd.read_csv(args.metadata, delimiter='\t', index_col=2)['region_exposure'].to_dict()
     
     groups = {}
     for i in seqs:
@@ -92,7 +100,7 @@ def main():
         for n in seq_nonsynonymous:
             groups.setdefault(n+'_'+continent, []).append(i)
 
-    write_new_file(nonsynonymous_path, groups)
+    write_new_file(args.output, groups)
 
 
 if __name__ == '__main__':

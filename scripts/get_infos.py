@@ -4,10 +4,9 @@ gisaid clade, nucleotide substitutions and amino acid substitutions of
 each sequence for subsampling parameter selection
 '''
 
+import argparse
 import warnings
 import pandas as pd
-from covSampler import divergent_pathway_path, meta_path, snps_path, variant_surveillance_path, infos_path
-from get_nonsynonymous import read_seq
 
 
 def filter_seq(file):
@@ -35,6 +34,24 @@ def filter_seq(file):
     return seqs_filtered
 
 
+def read_seq(file):
+    '''
+    read sequence snps from snps.txt
+
+    :param file: str, snps file path
+    
+    :return: dict, key: accession id; value: snps
+    '''
+    seqs = {}
+    with open(file) as f:
+        for line in f.readlines():
+            seq_id = line.split(':')[0]
+            snps = line.strip().split(':')[1].split(',')
+            seqs[seq_id] = snps
+
+    return seqs
+
+
 def write_new_file(file, infos):
     with open(file, 'w') as f:
         f.write('ID'+'\t'+'region'+'\t'+'country'+'\t'+'division'+'\t'+'date'+'\t' +
@@ -56,8 +73,18 @@ def write_new_file(file, infos):
 
 def main():
     warnings.filterwarnings('ignore')
-    seqs_filtered = filter_seq(divergent_pathway_path)    
-    meta = pd.read_csv(meta_path, delimiter='\t', index_col=2)
+
+    # command line interface
+    parser = argparse.ArgumentParser(description='Get infos')
+    parser.add_argument('--divergent-pathways', required=True, help='Divergent pathways file')
+    parser.add_argument('--metadata', required=True, help='Metadata file')
+    parser.add_argument('--snps', required=True, help='SNPs file')
+    parser.add_argument('--surveillance', required=True, help='Variant surveillance file')
+    parser.add_argument('--output', required=True, help='Infos file')
+    args = parser.parse_args()
+
+    seqs_filtered = filter_seq(args.divergent_pathways)    
+    meta = pd.read_csv(args.metadata, delimiter='\t', index_col=2)
     
     infos = {}
     for i in seqs_filtered:
@@ -71,7 +98,7 @@ def main():
         infos[i]['gisaidClade'] = str(meta.loc[i, 'GISAID_clade'])
 
     # get nucleotide substitutions from snps.txt
-    snps = read_seq(snps_path)
+    snps = read_seq(args.snps)
     for i in seqs_filtered:
         snps_formatted = []
         for snp in snps[i]:
@@ -79,11 +106,11 @@ def main():
         infos[i]['nt'] = '('+','.join(snps_formatted)+')'
 
     # get amino acid substitutions from variant surveillance
-    vs = pd.read_csv(variant_surveillance_path, delimiter='\t', index_col=0)
+    vs = pd.read_csv(args.surveillance, delimiter='\t', index_col=0)
     for i in seqs_filtered:
         infos[i]['aa'] = vs.loc[i, 'AA Substitutions']
 
-    write_new_file(infos_path, infos)
+    write_new_file(args.output, infos)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,99 @@
+data_directory:
+    data
+
+# Webserver_args always False
+webserver_args:
+    False
+
+# update_version:
+#     YYYY-MM-DD
+
+reference_sequence:
+    EPI_ISL_402125
+
+# Subsampling strategy
+subsampling:
+    # Subsamples output path
+    subsamples_path:
+        results/samples.txt
+    
+    # Location of subsamples
+    # Format: <Continent>/(<Country>)/(<Division>)
+    # Examples: Global, Europe, Europe/United Kingdom, Europe/United Kingdom/England
+    location:
+        Global
+    
+    # Date range of subsamples
+    # Format: YYYY-MM-DD
+    date_start:
+        2020-01-01
+    date_end:
+        2022-01-01
+    
+    # Variants of subsamples
+    #
+    # NONSPECIFIC -> No need to provide the variants part
+    #
+    # LINEAGE
+    # Lineage format -> a) WHO: Lineage/WHO/<VOC or VOI>
+    #                   b) Pango lineage: Lineage/Pango_lineage/<Pango lineage>
+    #                   c) GISAID clade: Lineage/GISAID_clade/<GISAID clade>
+    #                   d) Nextstrain clade: Lineage/Nextstrain_clade/<Nextstrain clade>
+    # Lineage examples -> a) WHO: Lineage/WHO/Alpha
+    #                     b) Pango lineage: Lineage/Pango_lineage/B.1.1.7
+    #                     c) GISAID clade: Lineage/GISAID_clade/GRY
+    #                     d) Nextstrain clade: Lineage/Nextstrain_clade/20I (Alpha, V1)
+    #
+    # SITE
+    # Site format -> a) Amino acid: Site/Amino_acid/<product>_<site><amino acid>
+    #                b) Nucleotide: Site/Nucleotide/<site><nucleotide>
+    # Site examples -> a) Amino acid: Site/Amino_acid/Spike_614G, Site/Amino_acid/Spike_69del, Site/Amino_acid/NS7a_62stop
+    #                  b) Nucleotide: Site/Nucleotide/23403G
+    #
+    # ** SARS-CoV-2 Genome Map
+    # -------------------------------------------------------------------------------
+    # |   Product Name   |   Start   |   End   |   Length   |   Amino Acid Length   |
+    # -------------------------------------------------------------------------------
+    # |   NSP1           |   266     |   805   |   540      |   180                 |
+    # |   NSP2           |   806     |   2719  |   1914     |   638                 |
+    # |   NSP3           |   2720    |   8554  |   5835     |   1945                |
+    # |   NSP4           |   8555    |   10054 |   1500     |   500                 |
+    # |   NSP5           |   10055   |   10972 |   918      |   306                 |
+    # |   NSP6           |   10973   |   11842 |   870      |   290                 |
+    # |   NSP7           |   11843   |   12091 |   249      |   83                  |
+    # |   NSP8           |   12092   |   12685 |   594      |   198                 |
+    # |   NSP9           |   12686   |   13024 |   339      |   113                 |
+    # |   NSP10          |   13025   |   13441 |   417      |   139                 |
+    # |   NSP12          |   13442   |   16236 |   2795     |   932                 |
+    # |   NSP13          |   16237   |   18039 |   1803     |   601                 |
+    # |   NSP14          |   18040   |   19620 |   1581     |   527                 |
+    # |   NSP15          |   19621   |   20658 |   1038     |   346                 |
+    # |   NSP16          |   20659   |   21555 |   897      |   7097                |
+    # |   Spike          |   21563   |   25384 |   3822     |   1274                |
+    # |   NS3            |   25393   |   26220 |   828      |   276                 |
+    # |   E              |   26245   |   26472 |   228      |   76                  |
+    # |   M              |   26523   |   27191 |   669      |   223                 |
+    # |   NS6            |   27202   |   27387 |   186      |   62                  |
+    # |   NS7a           |   27394   |   27759 |   366      |   122                 |
+    # |   NS7b           |   27756   |   27887 |   132      |   44                  |
+    # |   NS8            |   27894   |   28259 |   366      |   122                 |
+    # |   N              |   28274   |   29533 |   1260     |   420                 |
+    # |   NS10           |   29558   |   29674 |   117      |   39                  |
+    # -------------------------------------------------------------------------------
+    variants:
+        - Lineage/WHO/Alpha
+        - Lineage/Nextstrain_clade/20I (Alpha, V1)
+        - Lineage/Pango_lineage/B.1.1.7
+        - Lineage/GISAID_clade/GRY
+        - Site/Amino_acid/Spike_614G
+        - Site/Amino_acid/Spike_69del
+        - Site/Amino_acid/NS7a_62stop
+        - Site/Nucleotide/23403G
+
+    # Number of subsamples (Integer)
+    size:
+        1000
+    
+    # Subsampling characteristic (Representative or Comprehensive)
+    characteristic:
+        Representative
