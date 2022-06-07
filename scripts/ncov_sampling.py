@@ -167,7 +167,39 @@ def get_target_ids(file, args, genome_path):
     target_ids = sorted(target_ids, key=lambda x:int(x.split('_')[2]))
     
     return infos, target_ids
-            
+
+
+def get_temporally_even_distribution(required_sample_num, target_ids, infos):
+    '''
+    divide sequences in selected range by month and calculate required subsample number of each month (temporally even)
+    
+    :param required_sample_num: int, number of all subsamples
+    :param target_ids: list, accession id of all sequences in selected range
+    :param infos: dict, key: accession id; value: infos of sequences
+
+    :return: dict, key: month; value: required subsample number and target ids
+    '''
+    temporally_even_distribution = {}
+    # get target ids (each month)
+    for i in target_ids:
+        month = infos[i]['date'][:7]
+        if month not in temporally_even_distribution:
+            temporally_even_distribution[month] = {'required_sample_num': 0, 'target_ids': []}
+        temporally_even_distribution[month]['target_ids'].append(i)
+    
+    temporally_even_distribution = dict(sorted(temporally_even_distribution.items(), key=lambda x:x[0], reverse=True))
+    
+    # get required sample number (each month)
+    while required_sample_num > 0:
+        for m in temporally_even_distribution:
+            if required_sample_num == 0:
+                break
+            if temporally_even_distribution[m]['required_sample_num'] < len(temporally_even_distribution[m]['target_ids']):
+                temporally_even_distribution[m]['required_sample_num'] += 1
+                required_sample_num -= 1
+    
+    return temporally_even_distribution
+
 
 def read_haplotype_sequence(file, target_ids):
     '''
@@ -228,7 +260,7 @@ def read_path(file, target_ids, infos):
 
 def calculate_continent_sample_number(required_sample_num, seqs, infos):
     '''
-    distribute the number of subsamples to each continent
+    assign the number of subsamples to each continent
 
     :param required_sample_num: int, number of subsamples
     :param seqs: dict, key: accession id; value: snps at key sites
@@ -273,7 +305,7 @@ def com_sampling(required_sample_num, seqs, infos, paths_in_continent):
     # sampling in each continent
     for continent in paths_in_continent:
         sample_number_in_continent = continent_sample_number[continent]
-        # distribute the number of subsamples (in the continent) to each divergent pathways
+        # assign the number of subsamples (in the continent) to each divergent pathways
         sample_number_in_paths = []
         for i in range(0, len(paths_in_continent[continent])):
             sample_number_in_paths.append(0)
@@ -287,7 +319,7 @@ def com_sampling(required_sample_num, seqs, infos, paths_in_continent):
         # sampling in each divergent pathway
         for i in range(0, len(paths_in_continent[continent])):
             path = paths_in_continent[continent][i]
-            # distribute the number of subsamples (in the divergent pathway) to each month
+            # assign the number of subsamples (in the divergent pathway) to each month
             seq_in_months = {}
             for seq_id in path:
                 month = infos[seq_id]['date'][:7]
@@ -310,7 +342,7 @@ def com_sampling(required_sample_num, seqs, infos, paths_in_continent):
             # sampling in each month
             for m in seq_in_months:
                 seq_in_month = seq_in_months[m]
-                # distribute the number of subsamples (in the month) to each haplotype
+                # assign the number of subsamples (in the month) to each haplotype
                 seq_in_haplotype_sequences = {}
                 for seq_id in seq_in_month:
                     haplotype_sequence = seqs[seq_id]
@@ -367,17 +399,17 @@ def calculate_continent_genome_num_proportion(seqs, infos):
 
 def calculate_continent_threshold(required_sample_num, continent_genome_num_proportion, paths_in_continent):
     '''
-    1. distribute the number of subsamples to each continent
+    1. assign the number of subsamples to each continent
        -> make sure the proportion of subsamples in each continent is
           consistent with the proportion of sequences in selected range
           in each continent
     2. calculate the threshold of each continent
        in each continent,
        -> the number of subsamples in each divergent pathway = the number of
-          all sequences in seleted range in the divergent pathway / threshold
+          all sequences in selected range in the divergent pathway / threshold
        -> the threshold starts with 0 and increments by 1,
           until the number of subsamples in all divergent pathways <= the
-          number of subsamples in the continent (distributed in step 1)
+          number of subsamples in the continent (assigned in step 1)
     
     :param required_sample_num: int, number of subsamples
     :param continent_genome_num_proportion:
@@ -468,7 +500,7 @@ def rep_sampling(required_sample_num, seqs, infos, paths_in_continent):
     rep_samples = []
     # sampling in each continent
     for continent in paths_in_continent:
-        # distribute the number of subsamples (in the continent) to each divergent pathways
+        # assign the number of subsamples (in the continent) to each divergent pathways
         sample_number_in_paths = []
         for path in paths_in_continent[continent]:
             sample_number_in_paths.append(int(len(path)/continent_threshold[continent]['threshold']))
@@ -483,7 +515,7 @@ def rep_sampling(required_sample_num, seqs, infos, paths_in_continent):
         # sampling in each divergent pathway
         for i in range(0, len(paths_in_continent[continent])):
             path = paths_in_continent[continent][i]
-            # distribute the number of subsamples (in the divergent pathway) to each month
+            # assign the number of subsamples (in the divergent pathway) to each month
             seq_in_months = {}
             for seq_id in path:
                 month = infos[seq_id]['date'][:7]
@@ -506,7 +538,7 @@ def rep_sampling(required_sample_num, seqs, infos, paths_in_continent):
             # sampling in each month
             for m in seq_in_months:
                 seq_in_month = seq_in_months[m]
-                # distribute the number of subsamples (in the month) to each haplotype
+                # assign the number of subsamples (in the month) to each haplotype
                 seq_in_haplotype_sequences = {}
                 for seq_id in seq_in_month:
                     haplotype_sequence = seqs[seq_id]
@@ -579,26 +611,39 @@ def main():
     parser.add_argument('--variants', action='append', help='Variants of subsamples')
     parser.add_argument('--size', type=int, required=True, help='Number of subsamples')
     parser.add_argument('--characteristic', required=True, help='Characteristic of subsampling')
+    parser.add_argument('--temporally-even', action='store_true', help='Temporally even subsampling')
     parser.add_argument('--output', required=True, help='Subsamples file')
     args = parser.parse_args()
 
     infos, target_ids = get_target_ids(args.infos, args, args.genome)
-    
+
     # compare number of all sequences in selected range and number of required subsamples
     if args.size > len(target_ids):
         required_sample_num = len(target_ids)
     else:
         required_sample_num = args.size
 
-    seqs = read_haplotype_sequence(args.haplotypes, target_ids)
-
-    paths_in_continent = read_path(args.divergent_pathways, target_ids, infos)
-
-    # subsampling
-    if args.characteristic == 'Comprehensive':
-        samples = com_sampling(required_sample_num, seqs, infos, paths_in_continent)
-    elif args.characteristic == 'Representative':
-        samples = rep_sampling(required_sample_num, seqs, infos, paths_in_continent)
+    if args.temporally_even:
+        # get temporally even subsamples (monthly)
+        temporally_even_distribution = get_temporally_even_distribution(required_sample_num, target_ids, infos)
+        samples = []
+        for m in temporally_even_distribution:
+            seqs = read_haplotype_sequence(args.haplotypes, temporally_even_distribution[m]['target_ids'])
+            paths_in_continent = read_path(args.divergent_pathways, temporally_even_distribution[m]['target_ids'], infos)
+            # subsampling
+            if args.characteristic == 'Comprehensive':
+                samples_month = com_sampling(temporally_even_distribution[m]['required_sample_num'], seqs, infos, paths_in_continent)
+            elif args.characteristic == 'Representative':
+                samples_month = rep_sampling(temporally_even_distribution[m]['required_sample_num'], seqs, infos, paths_in_continent)
+            samples.extend(samples_month)
+    else:
+        seqs = read_haplotype_sequence(args.haplotypes, target_ids)
+        paths_in_continent = read_path(args.divergent_pathways, target_ids, infos)
+        # subsampling
+        if args.characteristic == 'Comprehensive':
+            samples = com_sampling(required_sample_num, seqs, infos, paths_in_continent)
+        elif args.characteristic == 'Representative':
+            samples = rep_sampling(required_sample_num, seqs, infos, paths_in_continent)
 
     write_new_file(args.output, samples, args, target_ids)
 

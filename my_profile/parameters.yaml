@@ -5,8 +5,9 @@ data_directory:
 webserver_args:
     False
 
-# update_version:
-#     YYYY-MM-DD
+# Update_version always False
+update_version:
+    False
 
 reference_sequence:
     EPI_ISL_402125
@@ -32,7 +33,7 @@ subsampling:
     
     # Variants of subsamples
     #
-    # NONSPECIFIC -> No need to provide the variants part
+    # NONSPECIFIC -> False
     #
     # LINEAGE
     # Lineage format -> a) WHO: Lineage/WHO/<VOC or VOI>
@@ -81,6 +82,7 @@ subsampling:
     # |   NS10           |   29558   |   29674 |   117      |   39                  |
     # -------------------------------------------------------------------------------
     variants:
+        # False
         - Lineage/WHO/Alpha
         - Lineage/Nextstrain_clade/20I (Alpha, V1)
         - Lineage/Pango_lineage/B.1.1.7
@@ -97,3 +99,7 @@ subsampling:
     # Subsampling characteristic (Representative or Comprehensive)
     characteristic:
         Representative
+    
+    # Temporally even subsampling
+    temporally_even:
+        True

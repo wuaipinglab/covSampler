@@ -138,7 +138,8 @@ rule subsampling:
         date_end = config["subsampling"]["date_end"],
         variants = "".join([" --variants "+"\""+v+"\"" for v in config["subsampling"]["variants"]]) if config["subsampling"].get("variants") else "",
         size = config["subsampling"]["size"],
-        characteristic = config["subsampling"]["characteristic"]
+        characteristic = config["subsampling"]["characteristic"],
+        temporally_even = "--temporally-even" if config["subsampling"].get("temporally_even") else ""
     shell:
         """
         python3 scripts/ncov_sampling.py \
@@ -153,5 +154,6 @@ rule subsampling:
         {params.variants} \
         --size {params.size} \
         --characteristic {params.characteristic} \
+        {params.temporally_even} \
         --output {output.subsamples}
         """
