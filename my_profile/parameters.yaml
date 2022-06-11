@@ -5,9 +5,12 @@ data_directory:
 webserver_args:
     False
 
-# Update_version always False
-update_version:
+# Description recorded in the output subsample file
+description:
     False
+    # 2022-01-01
+    # 2022-01-01, USA
+    # My subsampling
 
 reference_sequence:
     EPI_ISL_402125

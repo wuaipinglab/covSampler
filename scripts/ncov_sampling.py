@@ -575,9 +575,9 @@ def rep_sampling(required_sample_num, seqs, infos, paths_in_continent):
 
 def write_new_file(file, samples, args, target_ids):
     with open(file, 'w') as f:
+        if args.description is not None:
+            f.write('## Description: '+args.description+'\n')
         f.write('## File time: '+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))+'\n')
-        if args.update_version is not None:
-            f.write('## Data version: '+args.update_version+'\n')
         f.write('## Location of samples: '+args.location+'\n')
         f.write('## Start date of samples: '+args.date_start+'\n')
         f.write('## End date of samples: '+args.date_end+'\n')
@@ -604,7 +604,7 @@ def main():
     parser.add_argument('--genome', required=True, help='SARS-CoV-2 genome file')
     parser.add_argument('--haplotypes', required=True, help='Haplotype sequences file')
     parser.add_argument('--infos', required=True, help='Infos file')
-    parser.add_argument('--update-version', help='Update version')
+    parser.add_argument('--description', help='Description recorded in the output file')
     parser.add_argument('--location', required=True, help='Location of subsamples')
     parser.add_argument('--date-start', required=True, help='Start date of subsamples')
     parser.add_argument('--date-end', required=True, help='End date of subsamples')

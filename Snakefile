@@ -1,19 +1,15 @@
 rule all:
     input:
-        [
-            os.path.join(config["data_directory"], str(config["update_version"]), "args") if config.get("update_version") else os.path.join(config["data_directory"], "args"), 
-            config["subsampling"]["subsamples_path"]
-        ]
-        if config.get("webserver_args") else config["subsampling"]["subsamples_path"]
+        [os.path.join(config["data_directory"], "args"), config["subsampling"]["subsamples_path"]] if config.get("webserver_args") else config["subsampling"]["subsamples_path"]
         
 rule clean_genome:
     input:
-        metadata = os.path.join(config["data_directory"], str(config["update_version"]), "rawdata/metadata.tsv") if config.get("update_version") else os.path.join(config["data_directory"], "rawdata/metadata.tsv"),
-        msa = os.path.join(config["data_directory"], str(config["update_version"]), "rawdata/msa.fasta") if config.get("update_version") else os.path.join(config["data_directory"], "rawdata/msa.fasta"),
-        surveillance = os.path.join(config["data_directory"], str(config["update_version"]), "rawdata/variant_surveillance.tsv") if config.get("update_version") else os.path.join(config["data_directory"], "rawdata/variant_surveillance.tsv"),
-        tree = os.path.join(config["data_directory"], str(config["update_version"]), "rawdata/timetree.nwk") if config.get("update_version") else os.path.join(config["data_directory"], "rawdata/timetree.nwk")
+        metadata = os.path.join(config["data_directory"], "rawdata/metadata.tsv"),
+        msa = os.path.join(config["data_directory"], "rawdata/msa.fasta"),
+        surveillance = os.path.join(config["data_directory"], "rawdata/variant_surveillance.tsv"),
+        tree = os.path.join(config["data_directory"], "rawdata/timetree.nwk")
     output:
-        snps = os.path.join(config["data_directory"], str(config["update_version"]), "snps.txt") if config.get("update_version") else os.path.join(config["data_directory"], "snps.txt")
+        snps = os.path.join(config["data_directory"], "snps.txt")
     params:
         reference = config["reference_sequence"]
     threads: 8
@@ -31,11 +27,11 @@ rule clean_genome:
 
 rule get_nonsynonymous:
     input:
-        metadata = os.path.join(config["data_directory"], str(config["update_version"]), "rawdata/metadata.tsv") if config.get("update_version") else os.path.join(config["data_directory"], "rawdata/metadata.tsv"),
-        sc2 = os.path.join(config["data_directory"], str(config["update_version"]), "rawdata/SARS_CoV_2.csv") if config.get("update_version") else os.path.join(config["data_directory"], "rawdata/SARS_CoV_2.csv"),
-        snps = os.path.join(config["data_directory"], str(config["update_version"]), "snps.txt") if config.get("update_version") else os.path.join(config["data_directory"], "snps.txt")
+        metadata = os.path.join(config["data_directory"], "rawdata/metadata.tsv"),
+        sc2 = os.path.join(config["data_directory"], "rawdata/SARS_CoV_2.csv"),
+        snps = os.path.join(config["data_directory"], "snps.txt")
     output:
-        nonsynonymous = os.path.join(config["data_directory"], str(config["update_version"]), "nonsynonymous.txt") if config.get("update_version") else os.path.join(config["data_directory"], "nonsynonymous.txt")
+        nonsynonymous = os.path.join(config["data_directory"], "nonsynonymous.txt")
     shell:
         """
         python3 scripts/get_nonsynonymous.py \
@@ -47,11 +43,11 @@ rule get_nonsynonymous:
 
 rule get_key_sites:
     input:
-        metadata = os.path.join(config["data_directory"], str(config["update_version"]), "rawdata/metadata.tsv") if config.get("update_version") else os.path.join(config["data_directory"], "rawdata/metadata.tsv"),
-        nonsynonymous = os.path.join(config["data_directory"], str(config["update_version"]), "nonsynonymous.txt") if config.get("update_version") else os.path.join(config["data_directory"], "nonsynonymous.txt"),
-        snps = os.path.join(config["data_directory"], str(config["update_version"]), "snps.txt") if config.get("update_version") else os.path.join(config["data_directory"], "snps.txt")
+        metadata = os.path.join(config["data_directory"], "rawdata/metadata.tsv"),
+        nonsynonymous = os.path.join(config["data_directory"], "nonsynonymous.txt"),
+        snps = os.path.join(config["data_directory"], "snps.txt")
     output:
-        key_sites = os.path.join(config["data_directory"], str(config["update_version"]), "key_sites.csv") if config.get("update_version") else os.path.join(config["data_directory"], "key_sites.csv")
+        key_sites = os.path.join(config["data_directory"], "key_sites.csv")
     shell:
         """
         python3 scripts/get_key_sites.py \
@@ -63,10 +59,10 @@ rule get_key_sites:
 
 rule construct_haplotype_sequence:
     input:
-        key_sites = os.path.join(config["data_directory"], str(config["update_version"]), "key_sites.csv") if config.get("update_version") else os.path.join(config["data_directory"], "key_sites.csv"),
-        snps = os.path.join(config["data_directory"], str(config["update_version"]), "snps.txt") if config.get("update_version") else os.path.join(config["data_directory"], "snps.txt")
+        key_sites = os.path.join(config["data_directory"], "key_sites.csv"),
+        snps = os.path.join(config["data_directory"], "snps.txt")
     output:
-        haplotype_sequences = os.path.join(config["data_directory"], str(config["update_version"]), "haplotype_sequences.txt") if config.get("update_version") else os.path.join(config["data_directory"], "haplotype_sequences.txt")
+        haplotype_sequences = os.path.join(config["data_directory"], "haplotype_sequences.txt")
     shell:
         """
         python3 scripts/construct_haplotype_sequences.py \
@@ -77,10 +73,10 @@ rule construct_haplotype_sequence:
         
 rule construct_divergent_pathways:
     input:
-        haplotype_sequences = os.path.join(config["data_directory"], str(config["update_version"]), "haplotype_sequences.txt") if config.get("update_version") else os.path.join(config["data_directory"], "haplotype_sequences.txt"),
-        metadata = os.path.join(config["data_directory"], str(config["update_version"]), "rawdata/metadata.tsv") if config.get("update_version") else os.path.join(config["data_directory"], "rawdata/metadata.tsv")
+        haplotype_sequences = os.path.join(config["data_directory"], "haplotype_sequences.txt"),
+        metadata = os.path.join(config["data_directory"], "rawdata/metadata.tsv")
     output:
-        divergent_pathways = os.path.join(config["data_directory"], str(config["update_version"]), "divergent_pathways.csv") if config.get("update_version") else os.path.join(config["data_directory"], "divergent_pathways.csv")
+        divergent_pathways = os.path.join(config["data_directory"], "divergent_pathways.csv")
     threads: 8
     shell:
         """
@@ -93,12 +89,12 @@ rule construct_divergent_pathways:
 
 rule get_infos:
     input:
-        divergent_pathways = os.path.join(config["data_directory"], str(config["update_version"]), "divergent_pathways.csv") if config.get("update_version") else os.path.join(config["data_directory"], "divergent_pathways.csv"),
-        metadata = os.path.join(config["data_directory"], str(config["update_version"]), "rawdata/metadata.tsv") if config.get("update_version") else os.path.join(config["data_directory"], "rawdata/metadata.tsv"),
-        snps = os.path.join(config["data_directory"], str(config["update_version"]), "snps.txt") if config.get("update_version") else os.path.join(config["data_directory"], "snps.txt"),
-        surveillance = os.path.join(config["data_directory"], str(config["update_version"]), "rawdata/variant_surveillance.tsv") if config.get("update_version") else os.path.join(config["data_directory"], "rawdata/variant_surveillance.tsv")
+        divergent_pathways = os.path.join(config["data_directory"], "divergent_pathways.csv"),
+        metadata = os.path.join(config["data_directory"], "rawdata/metadata.tsv"),
+        snps = os.path.join(config["data_directory"], "snps.txt"),
+        surveillance = os.path.join(config["data_directory"], "rawdata/variant_surveillance.tsv")
     output:
-        infos = os.path.join(config["data_directory"], str(config["update_version"]), "infos.tsv") if config.get("update_version") else os.path.join(config["data_directory"], "infos.tsv")
+        infos = os.path.join(config["data_directory"], "infos.tsv")
     shell:
         """
         python3 scripts/get_infos.py \
@@ -111,10 +107,10 @@ rule get_infos:
 
 rule get_web_args:
     input:
-        infos = os.path.join(config["data_directory"], str(config["update_version"]), "infos.tsv") if config.get("update_version") else os.path.join(config["data_directory"], "infos.tsv"),
-        sc2 = os.path.join(config["data_directory"], str(config["update_version"]), "rawdata/SARS_CoV_2.csv") if config.get("update_version") else os.path.join(config["data_directory"], "rawdata/SARS_CoV_2.csv")
+        infos = os.path.join(config["data_directory"], "infos.tsv"),
+        sc2 = os.path.join(config["data_directory"], "rawdata/SARS_CoV_2.csv")
     output:
-        args = directory(os.path.join(config["data_directory"], str(config["update_version"]), "args") if config.get("update_version") else os.path.join(config["data_directory"], "args")),
+        args = directory(os.path.join(config["data_directory"], "args"))
     shell:
         """
         python3 scripts/get_web_args.py \
@@ -125,14 +121,14 @@ rule get_web_args:
 
 rule subsampling:
     input:
-        divergent_pathways = os.path.join(config["data_directory"], str(config["update_version"]), "divergent_pathways.csv") if config.get("update_version") else os.path.join(config["data_directory"], "divergent_pathways.csv"),
-        haplotype_sequences = os.path.join(config["data_directory"], str(config["update_version"]), "haplotype_sequences.txt") if config.get("update_version") else os.path.join(config["data_directory"], "haplotype_sequences.txt"),
-        infos = os.path.join(config["data_directory"], str(config["update_version"]), "infos.tsv") if config.get("update_version") else os.path.join(config["data_directory"], "infos.tsv"),
-        sc2 = os.path.join(config["data_directory"], str(config["update_version"]), "rawdata/SARS_CoV_2.csv") if config.get("update_version") else os.path.join(config["data_directory"], "rawdata/SARS_CoV_2.csv")
+        divergent_pathways = os.path.join(config["data_directory"], "divergent_pathways.csv"),
+        haplotype_sequences = os.path.join(config["data_directory"], "haplotype_sequences.txt"),
+        infos = os.path.join(config["data_directory"], "infos.tsv"),
+        sc2 = os.path.join(config["data_directory"], "rawdata/SARS_CoV_2.csv")
     output:
         subsamples = config["subsampling"]["subsamples_path"]
     params:
-        update_version = "--update-version " + str(config["update_version"]) if config.get("update_version") else "",
+        description = "--description " + "\""+str(config["description"])+"\"" if config.get("description") else "",
         location = "\""+config["subsampling"]["location"]+"\"",
         date_start = config["subsampling"]["date_start"],
         date_end = config["subsampling"]["date_end"],
@@ -147,7 +143,7 @@ rule subsampling:
         --genome {input.sc2} \
         --haplotypes {input.haplotype_sequences} \
         --infos {input.infos} \
-        {params.update_version} \
+        {params.description} \
         --location {params.location} \
         --date-start {params.date_start} \
         --date-end {params.date_end} \
