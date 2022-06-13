@@ -43,12 +43,8 @@ def calculate_day(date_1, date_2):
 
     :return: int, number of days between two dates
     '''
-    year_1 = int(date_1.split('-')[0])
-    month_1 = int(date_1.split('-')[1])
-    day_1 = int(date_1.split('-')[2])
-    year_2 = int(date_2.split('-')[0])
-    month_2 = int(date_2.split('-')[1])
-    day_2 = int(date_2.split('-')[2])
+    year_1, month_1, day_1 = map(int, date_1.split('-'))
+    year_2, month_2, day_2 = map(int, date_2.split('-'))
     return (datetime(year_2, month_2, day_2) - datetime(year_1, month_1, day_1)).days
 
 
