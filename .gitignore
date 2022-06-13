@@ -5,5 +5,5 @@
 .snakemake/
 
 # Files created by the pipeline
-results/*
+results/
 test/
