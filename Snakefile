@@ -5,7 +5,7 @@ rule all:
 rule clean_genome:
     input:
         metadata = os.path.join(config["data_directory"], "rawdata/metadata.tsv"),
-        msa = os.path.join(config["data_directory"], "rawdata/msa.fasta"),
+        msa = os.path.join(config["data_directory"], "rawdata/sequences.fasta"),
         surveillance = os.path.join(config["data_directory"], "rawdata/variant_surveillance.tsv"),
         tree = os.path.join(config["data_directory"], "rawdata/timetree.nwk")
     output:

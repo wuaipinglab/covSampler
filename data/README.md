@@ -8,7 +8,7 @@
 │
 ├── rawdata
 │   ├── metadata.tsv
-│   ├── msa.fasta
+│   ├── sequences.fasta
 │   ├── SARS_CoV_2.csv
 │   ├── timetree.nwk
 │   └── variant_surveillance.tsv
