@@ -1,4 +1,4 @@
-configfile: my_profile/parameters.yaml
+configfile: my_profiles/example_project/parameters.yaml
 
 # Set the maximum number of cores
 cores: 2

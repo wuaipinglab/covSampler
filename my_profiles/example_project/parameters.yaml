@@ -1,5 +1,5 @@
 data_directory:
-    data
+    data/example_project
 
 # Webserver_args always False
 webserver_args:
@@ -19,7 +19,7 @@ reference_sequence:
 subsampling:
     # Subsamples output path
     subsamples_path:
-        results/samples.txt
+        results/example_project/subsamples.txt
     
     # Location of subsamples
     # Format: <Continent>/(<Country>)/(<Division>)
