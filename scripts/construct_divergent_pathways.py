@@ -1,12 +1,11 @@
 '''
-construct the divergent pathways of global SARS-CoV-2 sequences
+construct the divergent pathways of all strains
 divergent pathways <--> networks,
--> nodes: SARS-CoV-2 sequences
--> edges: a pair of sequences with
+-> nodes: SARS-CoV-2 strains
+-> edges: a pair of strains with
           1. same division
           2. date interval <= 14
-          3. hamming distance between their haplotype sequences <= 1
-          (haplotype sequence is a short pseudo sequence composed of key sites of genome)
+          3. Hamming distance between their haplotype sequences <= 1
 '''
 
 import argparse
@@ -14,45 +13,6 @@ import warnings
 from multiprocessing import Pool
 from datetime import datetime
 import pandas as pd
-
-
-def read_haplotype_sequence(file):
-    '''
-    read haplotype sequences (constructed by combining pre-calculated
-    SARS-CoV-2 key sites) of sequences from haplotype_sequence.txt
-
-    :param file: str, haplotype sequence file path
-
-    :return: dict, key: accession id; value: snps at key sites
-    '''
-    seq_vs = {}
-    with open(file) as f:
-        lines = f.readlines()
-        for line in lines:
-            if line.strip().split(':')[1] == '':
-                seq_vs[line.split(':')[0]] = []
-            else:
-                seq_vs[line.split(':')[0]] = line.strip().split(':')[1].split(',')
-    return seq_vs
-
-
-def group_by_division(seq_vs, meta):
-    '''
-    group sequences by division (province / state)
-
-    :param seq_vs: dict, key: accession id; value: snps at key sites
-    :param meta: df, metadata
-
-    :return: list, accession id of sequences in each group
-    '''
-    seq_groups = {}
-    for i in seq_vs:
-        division = meta.loc[i, 'region_exposure'] \
-                   + '_' + meta.loc[i, 'country_exposure'] \
-                   + '_' + meta.loc[i, 'division_exposure']
-        seq_groups.setdefault(division, []).append(i)
-    seq_groups = list(sorted(seq_groups.values(), key=lambda x: len(x), reverse=True))
-    return seq_groups
 
 
 def calculate_day(date_1, date_2):
@@ -71,12 +31,12 @@ def calculate_day(date_1, date_2):
 
 def is_linked(seq_one, seq_two):
     '''
-    determine if the hamming distance between the haplotype sequences of two sequences <= 1
+    determine if the Hamming distance between the haplotype sequences of two strains <= 1
 
     :param seq_one: snps at key sites of sequence one
     :param seq_two: snps at key sites of sequence two
 
-    :return: boolean, the hamming distance between the haplotype sequences of two sequences <= 1?
+    :return: boolean, the Hamming distance between the haplotype sequences of two strains <= 1?
     '''
     a = set(seq_one) & set(seq_two)
     b = set(seq_one) | set(seq_two)
@@ -86,76 +46,66 @@ def is_linked(seq_one, seq_two):
         return True
 
 
-def construct_pathway(seq_groups_thread, submeta, seq_vs):
+def construct_pathway(seq_divisions_thread, dates, seq_hap):
     '''
     construct divergent pathways
     Note: the divergent pathways are similar with networks, where
-          nodes: SARS-CoV-2 sequences
-          edges: a pair of sequences with
+          nodes: SARS-CoV-2 strains
+          edges: a pair of strains with
                 1. same division
                 2. date interval <= 14
-                3. hamming distance between their haplotype sequences <= 1
-          * not all links (edges) are calculated, we just cluster the sequences by the theory of networks
-            the clustering results of simplified calculation and full calculation are the same
+                3. Hamming distance between their haplotype sequences <= 1
+          * Not all links (edges) are calculated, we just cluster the sequences by the theory of networks.
+            Simplified and fully computed clustering results are the same.
 
-    :param seq_groups_thread: list, group(s) of sequences (group <-> division)
-    :param submeta: dict, key: accession id; value: date
-    :param seq_vs: dict, key: accession; value: snps at key sites
+    :param seq_divisions_thread: list, group(s) of sequences (group <-> division)
+    :param dates: dict, key: strain; value: date
+    :param seq_hap: dict, key: strain; value: snps at key sites
     
     :return: list, divergent pathways
     '''
     subpathways_thread = []
-    # construct divergent pathways of each group (division)
-    for seq_group in seq_groups_thread:
-        # sort sequence by date
-        seq_group = sorted(seq_group, key=lambda x: submeta[x])
+    
+    # construct divergent pathways for each division
+    for seq_division in seq_divisions_thread:
+        seq_division = sorted(seq_division, key=lambda x: dates[x])
         subpathways = []
 
-        # add the first sequence as the first divergent pathway to the empty divergent pathways list
-        subpathways.append([seq_group[0]])
+        # add the first strain as the first divergent pathway to the empty divergent pathways list
+        subpathways.append([seq_division[0]])
 
-        # determine the relationship between each subsequent sequence and sequences in existing divergent pathways
-        # relationship -> 1. date interval 2. hamming distance between haplotype sequences
-        for i in seq_group[1:]:
+        # determine the relationship between each subsequent strain and strains in existing divergent pathways
+        # relationship -> 1. date interval 2. Hamming distance between haplotype sequences
+        for i in seq_division[1:]:
             pathway_linked = []
             for pathway in subpathways:
                 for j in pathway[::-1]:
-                    if calculate_day(submeta[j], submeta[i]) > 14:
+                    if calculate_day(dates[j], dates[i]) > 14:
                         break
-                    if is_linked(seq_vs[i], seq_vs[j]):
+                    if is_linked(seq_hap[i], seq_hap[j]):
                         pathway_linked.append(pathway)
                         break
 
-            # there is no link between the sequence and sequences in existing divergent pathways
+            # there is no link between this strain and strains in existing divergent pathways
             if len(pathway_linked) == 0:
                 subpathways.append([i])
             
-            # there is (are) link(s) between the sequence and sequence(s) in one existing divergent pathway
+            # there is (are) link(s) between this strain and strain(s) in one existing divergent pathway
             elif len(pathway_linked) == 1:
                 pathway_linked[0].append(i)
 
-            # there are links between the sequence and sequences in more than one existing divergent pathway
+            # there are links between this strain and strains in more than one existing divergent pathways
             else:
-                pathway_merged = [i]
+                combined_pathway = [i]
                 for pathway in pathway_linked:
-                    pathway_merged.extend(pathway)
+                    combined_pathway.extend(pathway)
                     subpathways.remove(pathway)
-                pathway_merged = sorted(pathway_merged, key=lambda x: submeta[x])
-                subpathways.append(pathway_merged)
+                combined_pathway = sorted(combined_pathway, key=lambda x: dates[x])
+                subpathways.append(combined_pathway)
 
         subpathways_thread.extend(subpathways)
 
     return subpathways_thread
-
-
-def write_new_file(pathway_file, pathways):
-    with open(pathway_file, 'w') as f:
-        f.write('ID'+ ',' + 'Path' + '\n')
-        pw = 0
-        for pathway in pathways:
-            pw += 1
-            for i in pathway:
-                f.write(i + ',' + str(pw) + '\n')
 
 
 def main():
@@ -169,32 +119,53 @@ def main():
     parser.add_argument('--output', required=True, help='Divergent pathways file')
     args = parser.parse_args()
 
-    meta = pd.read_csv(args.metadata, delimiter='\t', index_col=2)
-    seq_vs = read_haplotype_sequence(args.haplotypes)
-    seq_groups = group_by_division(seq_vs, meta)
-    
-    # calculate with multiprocessing
-    # each of the top x groups (with more sequences) is calculated with one seperate thread
-    # x = threads - 1
-    # other groups are calculated with the remaining one thread
-    seq_groups_threads = []
-    seq_groups_merged = []
-    for n, i in enumerate(seq_groups, start=1):
-        if n < args.threads:
-            seq_groups_threads.append([i])
-        else:
-            seq_groups_merged.append(i)
-    seq_groups_threads.append(seq_groups_merged)
+    # get haplotype seq
+    seq_hap = {}
+    with open(args.haplotypes) as f:
+        lines = f.readlines()
+        for line in lines:
+            if line.strip().split(':')[1] == '':
+                seq_hap[line.split(':')[0]] = []
+            else:
+                seq_hap[line.split(':')[0]] = line.strip().split(':')[1].split(',')
 
+    # get meta
+    meta_cols = ['strain', 'date', 'region_exposure', 'country_exposure', 'division_exposure']
+    meta = pd.read_csv(args.metadata, delimiter='\t', usecols=meta_cols, index_col='strain')
+    meta = meta[meta.index.isin(seq_hap)]
+    
+    # divide strains by division (province / state)
+    seq_divisions = {}
+    for i in seq_hap:
+        division = meta.loc[i, 'region_exposure']+'_'+meta.loc[i, 'country_exposure']+'_'+meta.loc[i, 'division_exposure']
+        seq_divisions.setdefault(division, []).append(i)
+    
+    seq_divisions = sorted(seq_divisions.values(), key=lambda x: len(x), reverse=True)
+    
+    # multiprocessing
+    #
+    # each of the top x divisions (with more sequences) is calculated with one seperate thread
+    # x = threads number - 1
+    # other divisions are calculated with the remaining one thread
+    #
+    seq_divisions_threads = []
+    seq_divisions_remaining = []
+    for n, i in enumerate(seq_divisions, start=1):
+        if n < args.threads:
+            seq_divisions_threads.append([i])
+        else:
+            seq_divisions_remaining.append(i)
+    seq_divisions_threads.append(seq_divisions_remaining)
+
+    # construct divergent pathways
     pathways = []
     p = Pool(args.threads)
     result_list = []
-    for i in seq_groups_threads:
-        # get accession id, date and snps at key sites of sequences calculated with the thread
+    for i in seq_divisions_threads:
         ids = [k for j in i for k in j]
-        submeta = meta[meta.index.isin(ids)]['date'].to_dict()
-        sub_seq_vs = dict([(key, seq_vs.get(key, None)) for key in ids])
-        result = p.apply_async(construct_pathway, args=(i, submeta, sub_seq_vs))
+        dates = meta[meta.index.isin(ids)]['date'].to_dict()
+        sub_seq_hap = dict([(key, seq_hap.get(key, None)) for key in ids])
+        result = p.apply_async(construct_pathway, args=(i, dates, sub_seq_hap))
         result_list.append(result)
     p.close()
     p.join()
@@ -203,7 +174,11 @@ def main():
 
     pathways = list(sorted(pathways, key=lambda x: len(x), reverse=True))
 
-    write_new_file(args.output, pathways)
+    with open(args.output, 'w') as f:
+        f.write('ID'+ ',' + 'Path' + '\n')
+        for n, pathway in enumerate(pathways, 1):
+            for i in pathway:
+                f.write(i + ',' + str(n) + '\n')
 
 
 if __name__ == '__main__':

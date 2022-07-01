@@ -1,37 +1,13 @@
 '''
-get key sites of SARS-CoV-2 genome
-key sites <- genome sites of nonsynonymous mutations that increased in number
-             of weekly emerging genomes for four consecutive weeks on at least
-             one continent were defined as key sites
+get key sites in SARS-CoV-2 genome
+key sites <- genome sites of nonsynonymous muts that increased in proportion
+             for four consecutive weeks on at least one continent
 '''
 
 import argparse
 import warnings
 from datetime import datetime
 import pandas as pd
-
-
-def read_mutations(file):
-    '''
-    read sequences in each group (nonsynonymous mutation + continent) from nonsynonymous.txt
-
-    :param file: str, nonsynonymous file path
-
-    :return: dict, key: group (nonsynonymous mutation + continent); value: accession id
-    '''
-    seqs_with_mutation = {}
-    with open(file) as f:
-        for line in f.readlines():
-            mutation = line.split(':')[0]
-            ids = line.strip().split(':')[1].split(',')
-            seqs_with_mutation[mutation] = ids
-    return seqs_with_mutation
-
-
-def get_genome_counts(file):
-    with open(file) as f:
-        genome_counts = len(f.readlines())
-    return genome_counts
 
 
 def calculate_day(date_1, date_2):
@@ -48,57 +24,48 @@ def calculate_day(date_1, date_2):
     return (datetime(year_2, month_2, day_2) - datetime(year_1, month_1, day_1)).days
 
 
-def is_continuous_increase(subseqs, meta, count_threshold):
+def is_key_site(seqs, seq_date, first_date, day_count, count_threshold):
     '''
-    determine if the number of the nonsynonymous mutation increases for four consecutive weeks in one continent
+    determine if the proportion of the nonsynonymous mut increases for four consecutive weeks in the continent
 
-    :param subseqs: list, accession id of sequences in the group (nonsynonymous mutation + continent)
-    :param meta: df, metadata
-    :param count_threshold: int, the minimum threshold for the number of nonsynonymous mutation
-                                 that can be designated as key nonsynomymous mutation
+    :param seqs: list, strains in the group (group -> nonsynonymous mut + continent)
+    :param seq_date: dict, key: strain; value: date
+    :param first_date: str, date of the earliest strain in whole date set
+    :param day_count: dict, key: day; value: number of strains in the continent
+    :param count_threshold: int, the minimum threshold for the absolute number of nonsynonymous muts per week
 
-    :return: boolean, the number of the nonsynonymous mutation increases in one continent for four consecutive weeks?
+    :return: boolean, the proportion of the nonsynonymous mut increases for four consecutive weeks in the continent?
     '''
-    # get number of sequences per date
-    dates = {}
-    for i in subseqs:
-        date = meta.loc[i, 'date']
-        dates[date] = dates.get(date, 0) + 1
-
-    # get the earliest date of sequences in the group
-    first_date = sorted(dates.items(), key=lambda x: x[0])[0][0]
-
-    # get number of sequences per day
+    # get number of the nonsynonymous mut per day
     days = {}
-    for i in dates:
-        day = calculate_day(first_date, i)+1
-        days[day] = dates[i]
-    for j in range(1, max(days.keys())):
+    for i in seqs:
+        day = calculate_day(first_date, seq_date[i])
+        days[day] = days.get(day, 0) + 1
+
+    for j in range(min(days.keys()), max(days.keys())):
         days.setdefault(j, 0)
+
     days = dict(sorted(days.items(), key=lambda x: x[0]))
 
-    # get number of sequences per period (seven days / one week)
-    counts_period = []
-    count_period = 0
-    for i in days:
-        count_period += days[i]
-        if i % 7 == 0 or i == max(days.keys()):
-            counts_period.append(count_period)
-            count_period = 0
+    # get proportion of the nonsynonymous mut per period (seven days / one week)
+    proportions = []
+    count_7d = 0
+    for n, i in enumerate(days, 1):
+        count_7d += days[i]
+        if n % 7 == 0 or i == max(days.keys()):
+            if count_7d != 0:
+                proportions.append((count_7d, count_7d / sum([day_count[d] for d in day_count if (i-6<=d<=i)])))
+            else:
+                proportions.append((0, 0))
+            count_7d = 0
 
-    # determine if the number of the nonsynonymous mutation increases for four consecutive weeks in one continent
-    if len(counts_period) >= 4:
-        for i in range(0, len(counts_period)-3):
-            if count_threshold < counts_period[i] < counts_period[i+1] < counts_period[i+2] < counts_period[i+3]:
-                return True
+    # determine if the proportion of the nonsynonymous mut grows for three consecutive weeks in one continent
+    if len(proportions) >= 4:
+        for i in range(0, len(proportions)-3):
+            if count_threshold < min(proportions[i][0], proportions[i+1][0], proportions[i+2][0], proportions[i+3][0]):
+                if proportions[i][1] < proportions[i+1][1] < proportions[i+2][1] < proportions[i+3][1]:
+                    return True
     return False
-
-
-def write_new_file(file, key_sites):
-    with open(file, 'w') as f:
-        f.write('Site'+'\n')
-        for i in key_sites:
-            f.write(i+'\n')
 
 
 def main():
@@ -106,32 +73,68 @@ def main():
     
     # command line interface
     parser = argparse.ArgumentParser(description='Get key sites')
-    parser.add_argument('--metadata', required=True, help='Metadata file')
+    parser.add_argument('--strains', required=True, help='Strains file')
     parser.add_argument('--nonsynonymous', required=True, help='Nonsynonymous file')
-    parser.add_argument('--snps', required=True, help='SNPs file')
+    parser.add_argument('--metadata', required=True, help='Metadata file')
     parser.add_argument('--output', required=True, help='Key sites file')
     args = parser.parse_args()
 
-    seqs_with_mutation = read_mutations(args.nonsynonymous)
-    meta = pd.read_csv(args.metadata, delimiter='\t', index_col=2)
-    # calculate the minimum threshold for the number of key nonsynonymous
-    # mutations in the first week of four consecutive increasing weeks
+    # get strains
+    strains = []
+    with open(args.strains) as f:
+        for n, line in enumerate(f.readlines()):
+            if n != 0:
+                strains.append(line.strip())
 
-    # threshold = total number of global sequences / 50,000
+    # get strains within each group (group -> nonsynonymous mut + continent)
+    seq_groups = {}
+    with open(args.nonsynonymous) as f:
+        for line in f.readlines():
+            group = line.split(':')[0]
+            ids = line.strip().split(':')[1].split(',')
+            seq_groups[group] = ids
+
+    # get meta
+    meta = pd.read_csv(args.metadata, delimiter='\t', usecols=['strain', 'date', 'region_exposure'], index_col='strain')
+    meta = meta[meta.index.isin(strains)]
+    
+    first_date = meta['date'].drop_duplicates().sort_values().values[0]
+
+    meta_continents = {}
+    for c in meta['region_exposure'].drop_duplicates():
+        submeta = meta[meta['region_exposure'] == c]
+        meta_continents[c] = {}
+        meta_continents[c]['seq_date'] = submeta['date'].to_dict()
+        meta_continents[c]['day_count'] = dict(
+            [(calculate_day(first_date, date), count) for date, count in submeta['date'].value_counts().to_dict().items()]
+            )
+
+    # get the minimum threshold for the absolute number of nonsynonymous muts per week
+    #
+    # threshold = the total number of sequences in the original data set / 50,000
     # | total number | 100,000 | 1,000,000 | 10,000,000 |
     # |  threshold   |    2    |     20    |     200    |
+    #
+    count_threshold = len(strains) / 50000
     
-    count_threshold = get_genome_counts(args.snps) / 50000
-    
+    # get key sites
     key_sites = []
-    for mutation in seqs_with_mutation:
-        if mutation.split('_')[0] not in key_sites:
-            if is_continuous_increase(seqs_with_mutation[mutation], meta, count_threshold):
-                key_sites.append(mutation.split('_')[0])
-    
-    key_sites = sorted(key_sites, key=lambda x:int(x))
+    for group in seq_groups:
+        if group.split('_')[0][1:-1] not in key_sites:
+            subseqs = seq_groups[group]
+            meta_continent = meta_continents[group.split('_')[-1]]
+            if is_key_site(
+                subseqs, meta_continent['seq_date'], first_date, meta_continent['day_count'], count_threshold
+                ):
+                key_sites.append(group.split('_')[0][1:-1])
 
-    write_new_file(args.output, key_sites)
+    key_sites = sorted(key_sites, key=lambda x: int(x))
+
+    with open(args.output, 'w') as f:
+        f.write('Site'+'\n')
+        for i in key_sites:
+            f.write(i+'\n')
+
 
 if __name__ == '__main__':
     main()

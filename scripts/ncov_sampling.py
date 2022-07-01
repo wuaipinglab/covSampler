@@ -2,54 +2,55 @@
 subsampling
 '''
 
-import re
+import os
 import time
 import argparse
-import pandas as pd
 
 
-def get_target_ids(file, args, genome_path):
+def get_target_ids(args):
     '''
-    get accession id of sequences in selected range (location, date and variants)
+    get strains in selected range (location, date and variants)
 
-    :param file: str, infos file path
     :param args: argparse, args
-    :param genome_path: str, SARS-CoV-2 genome file path
 
-    :return: dict, key: accession id; value: infos of sequences
-             list, accession id of sequences in selected range
+    :return: dict, key: strain; value: infos
+             list, strains in selected range
     '''
-    # read infos from infos.tsv
+    # get infos
     infos = {}
-    with open(file) as f:
+    with open(args.infos) as f:
         lines = f.readlines()
-        for line in lines:
-            if not line.startswith('ID'):
-                lineList = line.strip().split('\t')
-                seqID = lineList[0]
-                seqRegion = lineList[1]
-                seqCountry = lineList[2]
-                seqDivision = lineList[3]
-                seqDate = lineList[4]
-                seqPL = lineList[5]
-                seqNC = lineList[6]
-                seqGC = lineList[7]
-                seqNT = lineList[8]
-                seqAA = lineList[9]
-                infos[seqID] = {
-                    'region': seqRegion,
-                    'country': seqCountry,
-                    'division': seqDivision,
-                    'date': seqDate,
-                    'pangoLineage': seqPL,
-                    'nextstrainClade': seqNC,
-                    'gisaidClade': seqGC,
-                    'nt': seqNT,
-                    'aa': seqAA
+        for n, line in enumerate(lines):
+            if n != 0:
+                seq_items = line.strip().split('\t')
+                seq_id = seq_items[0]
+                seq_region = seq_items[1]
+                seq_country = seq_items[2]
+                seq_division = seq_items[3]
+                seq_date = seq_items[4]
+                seq_pangolineage = seq_items[5]
+                seq_nextstrainclade = seq_items[6]
+                seq_substitutions = seq_items[7]
+                seq_aasubstitutions = seq_items[8]
+                seq_aadeletions = seq_items[9]
+                infos[seq_id] = {
+                    'region': seq_region,
+                    'country': seq_country,
+                    'division': seq_division,
+                    'date': seq_date,
+                    'pangoLineage': seq_pangolineage,
+                    'nextstrainClade': seq_nextstrainclade,
+                    'substitutions': seq_substitutions,
+                    'aaSubstitutions': seq_aasubstitutions,
+                    'aaDeletions': seq_aadeletions
                 }
-    
+                if args.return_genbank_accession:
+                    seq_accession = seq_items[10]
+                    infos[seq_id]['genbankAccession'] = seq_accession
+
     target_ids = []
-    # add accession id of sequences in selected location
+
+    # add strains in selected location
     if args.location == 'Global':
         target_ids = list(infos.keys())
     elif args.location.count('/') == 0:
@@ -65,21 +66,21 @@ def get_target_ids(file, args, genome_path):
             if infos[i]['region'] == args.location.split('/')[0] and infos[i]['country'] == args.location.split('/')[1] and infos[i]['division'] == args.location.split('/')[2]:
                 target_ids.append(i)
     
-    # remove accession id of sequences not in selected date range
-    dropDate = []
+    # remove strains not in selected date range
+    to_rm_date = []
     for i in target_ids:
         if not args.date_start <= infos[i]['date'] <= args.date_end:
-            dropDate.append(i)
+            to_rm_date.append(i)
     
-    target_ids = list(set(target_ids)-set(dropDate))
+    target_ids = list(set(target_ids)-set(to_rm_date))
     
-    # remove accession id of sequences not belong to selected variant(s)
+    # remove strains != selected variant(s)
     if args.variants is not None:
         for variant in args.variants:
-            dropVariant = []
+            to_rm_variant = []
             # lineage
             if variant.startswith('Lineage'):
-                # VOC or VOI (example: Lineage/WHO/Alpha)
+                # variants of concern or variants of interest (example: Lineage/WHO/Alpha)
                 if variant.split('/')[1] == 'WHO':
                     PANGO_WHO = {
                         'B.1.1.7': 'Alpha',
@@ -90,92 +91,75 @@ def get_target_ids(file, args, genome_path):
                         'AY': 'Delta',
                         'B.1.1.529': 'Omicron',
                         'BA': 'Omicron',
+                        'BC': 'Omicron',
+                        'BD': 'Omicron',
+                        'BE': 'Omicron',
+                        'BF': 'Omicron',
+                        'BG': 'Omicron',
+                        'B.1.427': 'Epsilon',
+                        'B.1.429': 'Epsilon',
+                        'P.2': 'Zeta',
+                        'B.1.525': 'Eta',
+                        'P.3': 'Theta',
+                        'B.1.526': 'Iota',
+                        'B.1.617.1': 'Kappa',
                         'C.37': 'Lambda',
-                        'B.1.621': 'Mu'
+                        'B.1.621': 'Mu',
+                        'BB': 'Mu'
                     }
                     for i in target_ids:
-                        isVar = False
+                        is_who_var = False
                         for l in PANGO_WHO:
                             if infos[i]['pangoLineage'] == l or infos[i]['pangoLineage'].startswith(l+'.'):
-                                lWHO = PANGO_WHO[l]
-                                if lWHO == variant.split('/')[2]:
-                                    isVar = True
-                        if not isVar:
-                            dropVariant.append(i)
+                                l_who = PANGO_WHO[l]
+                                if l_who == variant.split('/')[2]:
+                                    is_who_var = True
+                        if not is_who_var:
+                            to_rm_variant.append(i)
                 # pango lineage (example: Lineage/Pango_lineage/B.1.1.7)
                 elif variant.split('/')[1] == 'Pango_lineage':
                     for i in target_ids:
                         if infos[i]['pangoLineage'] != variant.split('/')[2]:
-                            dropVariant.append(i)
+                            to_rm_variant.append(i)
                 # nextstrain clade (example: Lineage/Nextstrain_clade/20I (Alpha, V1))
                 elif variant.split('/')[1] == 'Nextstrain_clade':
                     for i in target_ids:
                         if infos[i]['nextstrainClade'] != variant.split('/')[2]:
-                            dropVariant.append(i)
-                # gisaid clade (example: Lineage/Gisaid_clade/G)
-                elif variant.split('/')[1] == 'Gisaid_clade':
-                    for i in target_ids:
-                        if infos[i]['gisaidClade'] != variant.split('/')[2]:
-                            dropVariant.append(i)
+                            to_rm_variant.append(i)
             # site
             elif variant.startswith('Site'):
-                genome = pd.read_csv(genome_path, index_col=0)
-                # nucleotide site
+                # nucleotide substitution (example: Site/Nucleotide/A23403G)
                 if variant.split('/')[1] == 'Nucleotide':
-                    genomePos = int(variant.split('/')[2][:-1])
-                    ref = genome[genome['genomePos'] == genomePos]['nucleotide'].values[0]
-                    # ref (example: Site/Nucleotide/23403A)
-                    if variant.split('/')[2][-1] == ref:
-                        for i in target_ids:
-                            if re.search('[^0-9]'+str(genomePos)+'[^0-9]', infos[i]['nt']):
-                                dropVariant.append(i)
-                    # substitution (example: Site/Nucleotide/23403G)
-                    else:
-                        for i in target_ids:
-                            if not re.search('[^0-9]'+variant.split('/')[2], infos[i]['nt']):
-                                dropVariant.append(i)
-                # amino acid site
+                    for i in target_ids:
+                        if variant.split('/')[2] not in infos[i]['substitutions']:
+                            to_rm_variant.append(i)
+                # amino acid
                 elif variant.split('/')[1] == 'Amino_acid':
-                    product = variant.split('/')[2].split('_')[0]
-                    if not (variant.split('/')[2].endswith('del') or variant.split('/')[2].endswith('stop')):
-                        aaPos = int(variant.split('/')[2].split('_')[1][:-1])
-                        ref = genome[(genome['product'] == product) & (genome['aaPos'] == aaPos)]['aa'].values[0]
-                        # ref (example: Site/Amino_acid/Spike_614D)
-                        if variant.split('/')[2][-1] == ref:
-                            for i in target_ids:
-                                if re.search(product+'_'+ref+str(aaPos)+'[^0-9]', infos[i]['aa']):
-                                    dropVariant.append(i)
-                        # substitution (example: Site/Amino_acid/Spike_614G)
-                        else:
-                            for i in target_ids:
-                                if product+'_'+ref+variant.split('/')[2].split('_')[1] not in infos[i]['aa']:
-                                    dropVariant.append(i)
-                    else:
-                        # deletion (example: Site/Amino_acid/Spike_69del)
-                        if variant.split('/')[2].endswith('del'):
-                            aaPos = int(variant.split('/')[2].split('_')[1][:-3])
-                        # stop (example: Site/Amino_acid/NS8_Q27stop)
-                        elif variant.split('/')[2].endswith('stop'):
-                            aaPos = int(variant.split('/')[2].split('_')[1][:-4])
-                        ref = genome[(genome['product'] == product) & (genome['aaPos'] == aaPos)]['aa'].values[0]
+                    # amino acid substitution (example: Site/Amino_acid/S:D614G)
+                    if variant[-1] != '-':
                         for i in target_ids:
-                            if product+'_'+ref+variant.split('/')[2].split('_')[1] not in infos[i]['aa']:
-                                dropVariant.append(i)
+                            if variant.split('/')[2] not in infos[i]['aaSubstitutions']:
+                                to_rm_variant.append(i)
+                    # amino acid deletion (example: Site/Amino_acid/S:H69-)
+                    else:
+                        for i in target_ids:
+                            if variant.split('/')[2] not in infos[i]['aaDeletions']:
+                                to_rm_variant.append(i)
 
-            target_ids = list(set(target_ids)-set(dropVariant))
+            target_ids = list(set(target_ids)-set(to_rm_variant))
     
-    target_ids = sorted(target_ids, key=lambda x:int(x.split('_')[2]))
+    target_ids.sort()
     
     return infos, target_ids
 
 
 def get_temporally_even_distribution(required_sample_num, target_ids, infos):
     '''
-    divide sequences in selected range by month and calculate required subsample number of each month (temporally even)
+    divide strains in selected range by month and calculate required subsample number of each month (temporally even)
     
     :param required_sample_num: int, number of all subsamples
-    :param target_ids: list, accession id of all sequences in selected range
-    :param infos: dict, key: accession id; value: infos of sequences
+    :param target_ids: list, all strains in selected range
+    :param infos: dict, key: strain; value: infos
 
     :return: dict, key: month; value: required subsample number and target ids
     '''
@@ -187,7 +171,7 @@ def get_temporally_even_distribution(required_sample_num, target_ids, infos):
             temporally_even_distribution[month] = {'required_sample_num': 0, 'target_ids': []}
         temporally_even_distribution[month]['target_ids'].append(i)
     
-    temporally_even_distribution = dict(sorted(temporally_even_distribution.items(), key=lambda x:x[0], reverse=True))
+    temporally_even_distribution = dict(sorted(temporally_even_distribution.items(), key=lambda x: x[0], reverse=True))
     
     # get required sample number (each month)
     while required_sample_num > 0:
@@ -203,13 +187,12 @@ def get_temporally_even_distribution(required_sample_num, target_ids, infos):
 
 def read_haplotype_sequence(file, target_ids):
     '''
-    read haplotype sequences (constructed by combining pre-calculated SARS-CoV-2
-    key sites) of sequences in selected range from haplotype_sequence.txt
+    read haplotype sequences of strains in selected range
 
     :param file: str, haplotype sequence file path
-    :param target_ids: list, accession id of sequences in selected range
+    :param target_ids: list, strains in selected range
 
-    :return: dict, key: accession id; value: snps at key sites
+    :return: dict, key: strain; value: snps at key sites
     '''
     all_seqs = {}
     seqs = {}
@@ -227,12 +210,11 @@ def read_haplotype_sequence(file, target_ids):
 
 def read_path(file, target_ids, infos):
     '''
-    read divergent pathways of sequences in selected range from divergent_pathway.csv
-    divide divergent pathways by continent
+    read divergent pathways of strains in selected range and divide these divergent pathways by continent
 
     :param file: str, divergent pathways file path
-    :param target_ids: list, accession id of sequences in selected range
-    :param infos: dict, key: accession id; value: infos of sequences
+    :param target_ids: list, strains in selected range
+    :param infos: dict, key: strain; value: infos
     
     :return: dict, key: continent; value: divergent pathways
     '''
@@ -242,8 +224,8 @@ def read_path(file, target_ids, infos):
     target_path = {}
     with open(file) as f:
         lines = f.readlines()
-        for line in lines:
-            if line.startswith('EPI_ISL'):
+        for n, line in enumerate(lines):
+            if n != 0:
                 seq_path[line.split(',')[0]] = line.strip().split(',')[1]
         for i in target_ids:
             target_seq_path[i] = seq_path[i]
@@ -263,8 +245,8 @@ def calculate_continent_sample_number(required_sample_num, seqs, infos):
     assign the number of subsamples to each continent
 
     :param required_sample_num: int, number of subsamples
-    :param seqs: dict, key: accession id; value: snps at key sites
-    :param infos: dict, key: accession id; value: infos of sequences
+    :param seqs: dict, key: strain; value: snps at key sites
+    :param infos: dict, key: strain; value: infos
     
     :return: dict, key: continent; value: number of subsamples in the continent
     '''
@@ -294,18 +276,18 @@ def com_sampling(required_sample_num, seqs, infos, paths_in_continent):
     comprehensive subsampling
 
     :param required_sample_num: int, number of subsamples
-    :param seqs: dict, key: accession id; value: snps at key sites
-    :param infos: dict, key: accession id; value: infos of sequences
+    :param seqs: dict, key: strain; value: snps at key sites
+    :param infos: dict, key: strain; value: infos
     :param paths_in_continent: dict, key: continent; value: divergent pathways
 
-    :return: list, accession id of subsamples
+    :return: list, subsamples
     '''
     continent_sample_number = calculate_continent_sample_number(required_sample_num, seqs, infos)
     com_samples = []
     # sampling in each continent
     for continent in paths_in_continent:
         sample_number_in_continent = continent_sample_number[continent]
-        # assign the number of subsamples (in the continent) to each divergent pathways
+        # assign the number of subsamples (in the continent) to each divergent pathway
         sample_number_in_paths = []
         for i in range(0, len(paths_in_continent[continent])):
             sample_number_in_paths.append(0)
@@ -366,25 +348,29 @@ def com_sampling(required_sample_num, seqs, infos, paths_in_continent):
                             sample_number_in_month -= 1
                 # sampling in each haplotype
                 for v in seq_in_haplotype_sequences:
-                    seq_in_haplotype_sequence = seq_in_haplotype_sequences[v]
                     sample_number_in_haplotype_sequence = sample_number_in_haplotype_sequences[v]
-                    seq_in_haplotype_sequence = list(sorted(seq_in_haplotype_sequence,
-                                                          key=lambda x: int(x.split('_')[2]), reverse=True))
-                    com_samples.extend(seq_in_haplotype_sequence[:sample_number_in_haplotype_sequence])
-    
-    com_samples = sorted(com_samples, key=lambda x: int(x.split('_')[2]))
+                    if sample_number_in_haplotype_sequence != 0:
+                        seq_in_haplotype_sequence = seq_in_haplotype_sequences[v]
+                        seq_in_haplotype_sequence.sort()
+                        samples_in_haplotype_sequence = []
+                        sampling_step = int(len(seq_in_haplotype_sequence)/sample_number_in_haplotype_sequence)
+                        for s in range(0, len(seq_in_haplotype_sequence), sampling_step):
+                            samples_in_haplotype_sequence.append(seq_in_haplotype_sequence[s])
+                            if len(samples_in_haplotype_sequence) == sample_number_in_haplotype_sequence:
+                                break
+                        com_samples.extend(samples_in_haplotype_sequence)
     
     return com_samples
 
 
 def calculate_continent_genome_num_proportion(seqs, infos):
     '''
-    calculate the proportion and number of sequences in each continent
+    calculate the proportion and number of selected strains in each continent
     
-    :param seqs: dict, key: accession id; value: snps at key sites
-    :param infos: dict, key: accession id; value: infos of sequences
+    :param seqs: dict, key: strain; value: snps at key sites
+    :param infos: dict, key: strain; value: infos
 
-    :return: dict, key: continent; value: proportion and number of sequences in the continent
+    :return: dict, key: continent; value: proportion and number of selected strains
     '''
     continent_genome_num = {}
     for i in seqs:
@@ -400,13 +386,12 @@ def calculate_continent_genome_num_proportion(seqs, infos):
 def calculate_continent_threshold(required_sample_num, continent_genome_num_proportion, paths_in_continent):
     '''
     1. assign the number of subsamples to each continent
-       -> make sure the proportion of subsamples in each continent is
-          consistent with the proportion of sequences in selected range
-          in each continent
+       -> make sure the proportion of subsamples in each continent is consistent
+          with the proportion of strains in selected range in the continent
     2. calculate the threshold of each continent
        in each continent,
        -> the number of subsamples in each divergent pathway = the number of
-          all sequences in selected range in the divergent pathway / threshold
+          all strains in selected range in the divergent pathway / threshold
        -> the threshold starts with 0 and increments by 1,
           until the number of subsamples in all divergent pathways <= the
           number of subsamples in the continent (assigned in step 1)
@@ -414,12 +399,11 @@ def calculate_continent_threshold(required_sample_num, continent_genome_num_prop
     :param required_sample_num: int, number of subsamples
     :param continent_genome_num_proportion:
            dict, key: continent;
-                 value: proportion and number of sequences in the continent
+                 value: proportion and number of selected strains
     :param paths_in_continent: dict, key: continent; value: divergent pathways
 
     :return: dict, key: continent;
-                   value: threshold and corresponding number of subsamples in
-                          all divergent pathways in the continent
+                   value: threshold and corresponding number of subsamples in all divergent pathways
     '''
     continent_threshold = {}
     for continent in paths_in_continent:
@@ -449,15 +433,13 @@ def calculate_continent_extra_sample_num(required_sample_num, continent_genome_n
     :param required_sample_num: int, number of subsamples
     :param continent_genome_num_proportion: 
            dict, key: continent;
-                 value: proportion and number of sequences in the continent
+                 value: proportion and number of selected strains
     :param continent_threshold: 
            dict, key: continent;
-                 value: threshold and corresponding number of subsamples in
-                        all divergent pathways in the continent
+                 value: threshold and corresponding number of subsamples in all divergent pathways
     
     :return: dict, key: continent;
-                   value: the number of extra subsamples of the continent
-                          after threshold calculation
+                   value: number of extra subsamples after threshold calculation
     '''
     continent_extra_sample_num = {}
     sample_number_with_threshold = 0
@@ -487,11 +469,11 @@ def rep_sampling(required_sample_num, seqs, infos, paths_in_continent):
     representative subsampling
 
     :param required_sample_num: int, number of subsamples
-    :param seqs: dict, key: accession id; value: snps at key sites
-    :param infos: dict, key: accession id; value: infos of sequences
+    :param seqs: dict, key: strain; value: snps at key sites
+    :param infos: dict, key: strain; value: infos
     :param paths_in_continent: dict, key: continent; value: divergent pathways
 
-    :return: list, accession id of subsamples
+    :return: list, subsamples
     '''
     continent_genome_num_proportion = calculate_continent_genome_num_proportion(seqs, infos)
     continent_threshold = calculate_continent_threshold(required_sample_num, continent_genome_num_proportion, paths_in_continent)
@@ -500,7 +482,7 @@ def rep_sampling(required_sample_num, seqs, infos, paths_in_continent):
     rep_samples = []
     # sampling in each continent
     for continent in paths_in_continent:
-        # assign the number of subsamples (in the continent) to each divergent pathways
+        # assign the number of subsamples (in the continent) to each divergent pathway
         sample_number_in_paths = []
         for path in paths_in_continent[continent]:
             sample_number_in_paths.append(int(len(path)/continent_threshold[continent]['threshold']))
@@ -562,48 +544,35 @@ def rep_sampling(required_sample_num, seqs, infos, paths_in_continent):
                             sample_number_in_month -= 1
                 # sampling in each haplotype
                 for v in seq_in_haplotype_sequences:
-                    seq_in_haplotype_sequence = seq_in_haplotype_sequences[v]
                     sample_number_in_haplotype_sequence = sample_number_in_haplotype_sequences[v]
-                    seq_in_haplotype_sequence = list(sorted(seq_in_haplotype_sequence,
-                                                          key=lambda x: int(x.split('_')[2]), reverse=True))
-                    rep_samples.extend(seq_in_haplotype_sequence[:sample_number_in_haplotype_sequence])
-    
-    rep_samples = sorted(rep_samples, key=lambda x: int(x.split('_')[2]))
-    
+                    if sample_number_in_haplotype_sequence != 0:
+                        seq_in_haplotype_sequence = seq_in_haplotype_sequences[v]
+                        seq_in_haplotype_sequence.sort()
+                        samples_in_haplotype_sequence = []
+                        sampling_step = int(len(seq_in_haplotype_sequence)/sample_number_in_haplotype_sequence)
+                        for s in range(0, len(seq_in_haplotype_sequence), sampling_step):
+                            samples_in_haplotype_sequence.append(seq_in_haplotype_sequence[s])
+                            if len(samples_in_haplotype_sequence) == sample_number_in_haplotype_sequence:
+                                break
+                        rep_samples.extend(samples_in_haplotype_sequence)
+        
     return rep_samples
 
 
-def write_new_file(file, samples, args, target_ids):
-    with open(file, 'w') as f:
-        if args.description is not None:
-            f.write('## Description: '+args.description+'\n')
-        f.write('## File time: '+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))+'\n')
-        f.write('## Location of samples: '+args.location+'\n')
-        f.write('## Start date of samples: '+args.date_start+'\n')
-        f.write('## End date of samples: '+args.date_end+'\n')
-        if args.variants is not None:
-            for variant in args.variants:
-                f.write('## Variant of samples: '+variant.replace('//','')+'\n') # .replace('//','') -> front end issue
-        f.write('## Number of all samples in range: '+str(len(target_ids))+'\n')
-        f.write('## Sampling characteristic: '+args.characteristic+'\n')
-        if args.size > len(target_ids):
-            f.write('## Required sample size: '+str(args.size)+'\n')
-            f.write('## WARNING!!! Required sample size > number of all samples in range'+'\n')
-            f.write('## Actual sample size: '+str(len(target_ids))+'\n')
-        else:
-            f.write('## Sample size: '+str(args.size)+'\n')
-        f.write('# ID'+'\n')
-        for i in samples:
-            f.write(i+'\n')
+def get_version():
+    about = {}
+    thisdir = os.path.abspath(os.path.dirname(__file__))
+    with open(os.path.join(thisdir, '__version__.py')) as f:
+        exec(f.read(), about)
+    return 'v'+about['__version__']
 
 
 def main():
     # command line interface
     parser = argparse.ArgumentParser(description='Subsampling')
-    parser.add_argument('--divergent-pathways', required=True, help='Divergent pathways file')
-    parser.add_argument('--genome', required=True, help='SARS-CoV-2 genome file')
-    parser.add_argument('--haplotypes', required=True, help='Haplotype sequences file')
     parser.add_argument('--infos', required=True, help='Infos file')
+    parser.add_argument('--haplotypes', required=True, help='Haplotype sequences file')
+    parser.add_argument('--divergent-pathways', required=True, help='Divergent pathways file')
     parser.add_argument('--description', help='Description recorded in the output file')
     parser.add_argument('--location', required=True, help='Location of subsamples')
     parser.add_argument('--date-start', required=True, help='Start date of subsamples')
@@ -612,16 +581,15 @@ def main():
     parser.add_argument('--size', type=int, required=True, help='Number of subsamples')
     parser.add_argument('--characteristic', required=True, help='Characteristic of subsampling')
     parser.add_argument('--temporally-even', action='store_true', help='Temporally even subsampling')
+    parser.add_argument('--return-genbank-accession', action='store_true', help='Return genbank accession')
     parser.add_argument('--output', required=True, help='Subsamples file')
     args = parser.parse_args()
 
-    infos, target_ids = get_target_ids(args.infos, args, args.genome)
+    # get infos and strains in selected range
+    infos, target_ids = get_target_ids(args)
 
-    # compare number of all sequences in selected range and number of required subsamples
-    if args.size > len(target_ids):
-        required_sample_num = len(target_ids)
-    else:
-        required_sample_num = args.size
+    # determine the number of subsamples
+    required_sample_num = min(args.size, len(target_ids))
 
     if args.temporally_even:
         # get temporally even subsamples (monthly)
@@ -645,7 +613,38 @@ def main():
         elif args.characteristic == 'Representative':
             samples = rep_sampling(required_sample_num, seqs, infos, paths_in_continent)
 
-    write_new_file(args.output, samples, args, target_ids)
+    samples.sort()
+
+    with open(args.output, 'w') as f:
+        if args.description is not None:
+            f.write('## Description: '+args.description+'\n')
+        f.write('## covSampler version: '+get_version()+'\n')
+        f.write('## File time: '+time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))+'\n')
+        f.write('## Location of subsamples: '+args.location+'\n')
+        f.write('## Start date of subsamples: '+args.date_start+'\n')
+        f.write('## End date of subsamples: '+args.date_end+'\n')
+        if args.variants is not None:
+            for variant in args.variants:
+                f.write('## Variant of subsamples: '+variant.replace('//','')+'\n') # .replace('//','') -> front end issue
+        f.write('## Number of all sequences in range: '+str(len(target_ids))+'\n')
+        if args.size > len(target_ids):
+            f.write('## Required subsample size: '+str(args.size)+'\n')
+            f.write('## WARNING!!! Required subsample size > number of all sequences in range'+'\n')
+            f.write('## Actual subsample size: '+str(len(target_ids))+'\n')
+        else:
+            f.write('## Subsample size: '+str(args.size)+'\n')
+        f.write('## Subsampling characteristic: '+args.characteristic+'\n')
+        if args.temporally_even:
+            f.write('## Temporally even: True'+'\n')
+        else:
+            f.write('## Temporally even: False'+'\n')
+        f.write('# ID'+'\n')
+        if args.return_genbank_accession:
+            for i in samples:
+                f.write(infos[i]['genbankAccession']+'\n')
+        else:
+            for i in samples:
+                f.write(i+'\n')
 
 
 if __name__ == '__main__':

@@ -4,5 +4,8 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - nextclade>=1.11.0
-  - pangolin>=4.0.6
+  - biopython=1.79
+  - pandas=1.4.1
+  - python>=3.7
+  - snakemake=7.8.1
+  - nextclade=1.11.0
