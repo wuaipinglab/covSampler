@@ -25,7 +25,7 @@ def main():
                 }
 
     with open(args.output, 'w') as f:
-        f.write('strain'+'\t'+'date'+'\t'+'region_exposure'+'\t'+'pango_lineage')
+        f.write('strain'+'\t'+'date'+'\t'+'region_exposure'+'\t'+'pango_lineage'+'\n')
         for i in seqs:
             f.write(i+'\t'+seqs[i]['date']+'\t'+seqs[i]['region_exposure']+'\t'+seqs[i]['pango_lineage']+'\n')
 
