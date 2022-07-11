@@ -1,8 +1,8 @@
 # covSampler
 
-Phylogenetic analysis has been widely used to describe, display and infer the evolutionary patterns of viruses. The unprecedented accumulation of SARS-CoV-2 genomes has provided valuable materials for the real-time study of SARS-CoV-2 evolution. However, the large number of SARS-CoV-2 genome sequences also poses great challenges for data analysis.
+Phylogenetic analysis has been widely used to describe, display and infer the evolutionary patterns of viruses. The unprecedented accumulation of SARS-CoV-2 genomes has provided valuable materials for the real-time study of SARS-CoV-2 evolution. However, the large number of SARS-CoV-2 genome sequences also poses great challenges for phylogenetic analysis.
 
-Here, we developed a subsampling method named **covSampler** based on the spatiotemporal distribution and genetic variation of SARS-CoV-2 to reasonable and efficient subsampling the large-scale SARS-CoV-2 genome data sets.
+Here, we developed a subsampling method named **covSampler** based on the spatiotemporal distribution and genetic variation of SARS-CoV-2 genomes to subsampling the large-scale SARS-CoV-2 genome data sets.
 
 ## Overview
 
@@ -14,13 +14,13 @@ Here, we developed a subsampling method named **covSampler** based on the spatio
 
 #### Determination of key genome sites of SARS-CoV-2 (Figure B)
 
-- Genome sites of nonsynonymous mutations that increased in number of weekly emerging genomes for four consecutive weeks on at least one continent were defined as key sites.
+- Genome sites of nonsynonymous mutations that increased in frequency per week for four consecutive weeks on at least one continent were defined as key sites.
 - The haplotype sequence of each genome is constructed according to these key sites.
 
 #### Construction of divergent pathways (Figure C)
 
-- Divergent pathways in this paper are network-like results of viral clustering constructed by connecting each pair of viral sequences with geographic consistency `(from same administrative  division)`, temporal continuity `(collected <= 14 days apart)` and genetic similarity `(Hamming distance <= 1 between their haplotype sequences)`.
-- Networks with only internal links --> divergent pathways
+- Divergent pathways in covSampler are network-like results of viral clustering constructed by connecting each pair of viral sequences with geographic consistency `(from same administrative  division)`, temporal continuity `(collected <= 14 days apart)` and genetic similarity `(Hamming distance <= 1 between their haplotype sequences)`.
+- Network with only internal links (i.e. individual cluster) --> divergent pathway
 - Each divergent pathway reflects the local dynamic transmission and evolution of viruses over a period of time.
 
 #### Representative and comprehensive subsampling based on the divergent pathways (Figure D)
@@ -38,12 +38,47 @@ Here, we developed a subsampling method named **covSampler** based on the spatio
 - Then, each continent, divergent pathway, month and viral haplotype in the original data set was assigned an expected number of subsamples. Representative subsampling and comprehensive subsampling were performed using different strategies to assign the number of subsamples.
 
 ## Usage
+
+### Download the covSampler workflow
+
 ```
 git clone https://github.com/wuaipinglab/covSampler.git
-conda env create -f environment.yaml
-conda activate covsampler
-Snakemake --profile my_profile
 ```
 
+### Create and activate the covSampler conda environment
+
+```
+cd covSampler
+conda env create -f environment.yaml
+conda activate covsampler
+```
+
+### Prepare data
+
+To use covSampler to analyze your own data, you’ll need to prepare two files:
+
+  1. A FASTA file with viral genomic sequences.
+
+  2. A corresponding TSV file with metadata describing each sequence.
+
+See the [data preparation guide](data/README.md) for detailed instructions.
+
+### Run covSampler
+
+After data preparation, you can run the covSampler workflow to subsampling. The workflow consists of two main parts:
+
+  1. Data processing for subsampling.
+
+  2. Subsampling.
+
+For the same data set, once you've processed the data, you can perform subsampling multiple times by adjusting  parameters (location, date range, subsampling characteristic et al.) to get the subsamples.
+
+See this [tutorial](my_profiles/README.md) for detailed instructions.
+
+## Web application
+
+We also provide a [web application](https://www.covsampler.net/) of covSampler. It allows users to perform global SARS-CoV-2 subsampling. The sequences used in the web application are sourced from [NCBI GenBank](https://www.ncbi.nlm.nih.gov/genbank/).
+
 ## Acknowledgements
-We sincerely thank the Global Intiative on Sharing All Influenza Data ([GISAID](https://www.gisaid.org/)) and all data contributors for making SARS-CoV-2 genomic sequence data available to the public and open science.
+
+We gratefully acknowledge [NCBI GenBank](https://www.ncbi.nlm.nih.gov/genbank/) and all the authors, originating and submitting laboratories of the SARS-CoV-2 sequences for sharing their work in open databases.
