@@ -1,7 +1,7 @@
 data_directory:
     data/example_project
 
-# Sequences with length < min length would be removed. (int)
+# Sequences with length < min length will be removed. (int)
 sequence_min_length:
     27000
 
@@ -17,10 +17,10 @@ covizu_tree:
 genbank_accession:
     False
 
-# This pipeline consists of two parts: 1) data preparation and 2) subsampling.
-# 1) Before subsampling, you should prepare the data for subsampling.
+# This pipeline consists of two parts: 1) data processing and 2) subsampling.
+# 1) Before subsampling, you should process the data for subsampling.
 #    In this stage, please set "start_subsampling" parameter = "False".
-# 2) After data preparation, you can perform subsampling.
+# 2) After data processing, you can perform subsampling.
 #    In this stage, please set "start_subsampling" parameter = "True".
 start_subsampling:
     False
@@ -60,7 +60,7 @@ subsampling:
     #                   b) Pango lineage: - Lineage/Pango_lineage/<Pango lineage>
     #                   c) Nextstrain clade: - Lineage/Nextstrain_clade/<Nextstrain clade>
     # Lineage examples -> a) WHO: - Lineage/WHO/Alpha
-    #                     b) Pango - lineage: Lineage/Pango_lineage/B.1.1.7
+    #                     b) Pango lineage: - Lineage/Pango_lineage/B.1.1.7
     #                     c) Nextstrain clade: - Lineage/Nextstrain_clade/20I (Alpha, V1)
     #
     # SITE
