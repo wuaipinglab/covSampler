@@ -4,8 +4,8 @@ You will learn how to run the workflow with your data.
 
 ## Prerequisites
 
-1. [Create covSampler conda environment](https://github.com/wuaipinglab/covSampler#create-the-covsampler-conda-environment)
-2. [Prepare your sequence data and metadata](https://github.com/wuaipinglab/covSampler#prepare-data)
+1. Create and activate covSampler conda environment.
+2. Prepare your sequence data and metadata.
 
 ## Be familiar with workflow configuration profile
 
