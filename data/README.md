@@ -18,7 +18,7 @@ Prepare your metadata in a [TSV](https://en.wikipedia.org/wiki/Tab-separated_val
 
 A metadata file must include the following fields:
 
-|  fields  |  Description  |  Format  |
+|  Fields  |  Description  |  Format  |
 |  -  |  -  |  -  |
 |  strain  |  Sequence name |  The strain values in the metadata file must match them in the fasta file  |
 |  date  |  Collection date  |  YYYY-MM-DD (Ambiguous value is unacceptable)  |
