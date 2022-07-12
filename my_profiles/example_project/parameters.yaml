@@ -7,12 +7,13 @@ sequence_min_length:
 
 # Remove sequences whose corresponding pango lineages are not in the provided CoVizu time-scaled tree.
 # CoVizu -> https://filogeneti.ca/CoVizu/
-# The "covizu_tree" parameter is mainly designed for the convenience of front-end tree display.
+# The "covizu_tree" parameter is mainly designed for the workflow for covSampler web application.
 # In general, keep it = "False".
 covizu_tree:
     False
 
-# The "genbank_accession" parameter is designed for analysis on our web server.
+# Return genbank accession.
+# The "genbank_accession" parameter is designed for the workflow for covSampler web application.
 # Please keep it = "False".
 genbank_accession:
     False
