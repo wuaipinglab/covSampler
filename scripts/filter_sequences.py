@@ -13,6 +13,7 @@ def main():
     parser.add_argument('--metadata', required=True, help='Metadata file')
     parser.add_argument('--covizu-tree', help='CoVizu time-scaled tree file')
     parser.add_argument('--nextclade-tsv', required=True, help='Nextclade tsv file')
+    parser.add_argument('--include-genbank-accession', action='store_true', help='Include genbank accession')
     parser.add_argument('--output', required=True, help='Remaining strains file')
     args = parser.parse_args()
 
@@ -20,10 +21,9 @@ def main():
     meta = pd.read_csv(args.metadata, delimiter='\t')
 
     meta_cols = ['strain', 'date', 'region_exposure', 'country_exposure', 'division_exposure', 'pango_lineage']
-    if 'genbank_accession' in meta.columns:
+    if args.include_genbank_accession:
         meta_cols.append('genbank_accession')
-    if 'host' in meta.columns:
-        meta_cols.append('host')
+        meta = meta[meta['host'] == 'Homo sapiens']
 
     # filter meta: na
     meta = meta.dropna(axis=0, subset=meta_cols)
@@ -31,10 +31,6 @@ def main():
     # filter meta: "?"
     for col in meta_cols:
         meta = meta[meta[col] != '?']
-
-    # filter meta: host != Homo sapiens
-    if 'host' in meta_cols:
-        meta = meta[meta['host'] == 'Homo sapiens']
 
     # filter meta: unclear date
     meta['date'] = meta['date'].astype(str)

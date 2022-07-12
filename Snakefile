@@ -47,12 +47,14 @@ rule filter_sequences:
     output:
         strains = os.path.join(config["data_directory"], "strains.txt")
     params:
+        genbank_accession = "--include-genbank-accession" if config.get("genbank_accession") else "",
         covizu_tree = "--covizu-tree "+os.path.join(config["data_directory"], "rawdata/timetree.nwk") if config.get("covizu_tree") else ""
     shell:
         """
         python3 scripts/filter_sequences.py \
             --metadata {input.metadata} \
             --nextclade-tsv {input.nextclade_tsv} \
+            {params.genbank_accession} \
             {params.covizu_tree} \
             --output {output.strains}
         """
