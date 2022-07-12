@@ -8,13 +8,13 @@ To use covSampler to analyze your own data, you’ll need to prepare two files:
 
 ## Format your sequence data
 
-Prepare your nucleotide sequences in a [FASTA](https://en.wikipedia.org/wiki/FASTA_format) format file.
+Prepare your nucleotide sequences in a [FASTA](https://en.wikipedia.org/wiki/FASTA_format) format file named `sequences.fasta`.
 
-You can see a formatted example sequence file at [here](../data/example_project/rawdata/sequences.fasta).
+You can see a formatted example sequence file [here](../data/example_project/rawdata/sequences.fasta).
 
 ## Format your metadata
 
-Prepare the metadata in a [TSV](https://en.wikipedia.org/wiki/Tab-separated_values) format file.
+Prepare your metadata in a [TSV](https://en.wikipedia.org/wiki/Tab-separated_values) format file named `metadata.tsv`.
 
 A metadata file must include the following fields:
 
@@ -29,7 +29,7 @@ A metadata file must include the following fields:
 
 \* Currently covSampler workflow does not include Pango lineage assignment. You can perform the Pango lineage assignment using [pangolin](https://cov-lineages.org/resources/pangolin.html) or [nextclade](https://clades.nextstrain.org/).
 
-You can see a formatted example metadata at [here](../data/example_project/rawdata/metadata.tsv).
+You can see a formatted example metadata file [here](../data/example_project/rawdata/metadata.tsv).
 
 ## Create your project data directory
 
@@ -41,7 +41,7 @@ For a new project (here named `tutorial_project`):
    
 2. Create `rawdata/` folder in `data/tutorial_project`.
    
-3. Move your sequence data and metadata into the `data/turotial_project/rawdata/` folder.
+3. Move your sequence data and metadata into `data/turotial_project/rawdata/` folder.
 
   Now, the `data/` directory structure should look like this:
 

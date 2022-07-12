@@ -5,6 +5,7 @@ You will learn how to run the workflow with your data.
 ## Prerequisites
 
 1. Create and activate covSampler conda environment.
+
 2. Prepare your sequence data and metadata.
 
 ## Be familiar with workflow configuration profile
@@ -13,7 +14,7 @@ Before we start running the workflow, let's get familiar with the workflow confi
 
 You can configure the workflow by specifying values in the workflow configuration profile.
 
-All profiles are in the `my_profiles/` directory. Each project has its corresponding profile.
+All profiles are in `my_profiles/` directory. Each project has its corresponding profile.
 
 For the example project, its corresponding profile is in `my_profiles/example_profile/`. You can use it to better understand the workflow configuration profile.
 
@@ -40,7 +41,7 @@ printshellcmds: True
 
 #### printshellcmds
 * type: bool
-* description: Print the commands?
+* description: Print the commands
 
 ### What's the parameters.yaml?
 
@@ -98,9 +99,17 @@ subsampling:
 * type: int
 * description: Sequences with length < min length will be removed
 
+#### covizu_tree
+* type: bool
+* description: Remove sequences whose corresponding pango lineages are not in the provided [CoVizu](https://filogeneti.ca/CoVizu/) time-scaled tree. This parameter is mainly designed for the workflow for covSampler web application. In general, keep it = `False`.
+
+#### genbank_accession
+* type: bool
+* description: Return genbank accession. This parameter is designed for the workflow for covSampler web application. Please keep it = `False`.
+
 #### start_subsampling
 * type: bool
-* description: Start subsampling?
+* description: Start subsampling
         
         This pipeline consists of two parts: 1) data processing and 2) subsampling.
 
@@ -165,8 +174,14 @@ subsampling:
     * \- Site/Amino_acid/S:H69-
     * \- Site/Amino_acid/ORF7a:Q62*
 * note:
-    1. For each project, after performing the data processing part, all available values will be recorded in the`data/<project_name>/args/who_variants.txt`, `data/<project_name>/args/pango_lineages.txt`, `data/<project_name>/args/nextstrain_clades.txt`, `data/<project_name>/args/nucleotide.txt`, `data/<project_name>/args/amino_acid.txt`
-    2. You can also put multiple conditions together:
+    1. For each project, after performing the data processing part, all available values will be recorded in the `data/<project_name>/args/who_variants.txt`, `data/<project_name>/args/pango_lineages.txt`, `data/<project_name>/args/nextstrain_clades.txt`, `data/<project_name>/args/nucleotide.txt` and `data/<project_name>/args/amino_acid.txt`
+    2. You can use just one query or put multiple queries together:
+            
+            # --- one query example ---
+            variants:
+            - Lineage/WHO/Alpha
+
+            # --- multiple queries example ---
             variants:
             - Lineage/WHO/Alpha
             - Lineage/Nextstrain_clade/20I (Alpha, V1)
@@ -175,6 +190,7 @@ subsampling:
             - Site/Amino_acid/S:N501Y
             - Site/Amino_acid/S:H69-
             - Site/Amino_acid/ORF7a:Q62*
+            
     3. [The SARS-CoV-2 genome map](../defaults/genome_map/README.md) may be helpful when specifying the amino acid mutation.
 
 #### subsampling - size
@@ -207,16 +223,16 @@ subsampling:
 
 #### subsampling - temporally_even
 * type: bool
-* description: Is the number of subsamples the same for each month? 
+* description: The number of subsamples is the same for each month
 * note: 
   1. The subsamples within each month still fit the selected Comprehensive or Representative distribution characteristic.
   2. The temporally even option will take a few more minutes.
 
 ## Configure your project workflow for data processing
 
-Before subsampling, you should process the data for subsampling. And you can configure the covSampler workflow for data processing.
+Before subsampling, you should process the data for subsampling.
 
-1. Create your project (here named `tutorial_project`) profile folder in the `my_profiles/` directory.
+1. Create your project (here named `tutorial_project`) profile folder in `my_profiles/` directory.
    
 2. Copy `config.yaml` and `parameters.yaml` files from `my_profiles/example_project` to `my_profiles/tutorial_project`.
 
@@ -235,11 +251,11 @@ Before subsampling, you should process the data for subsampling. And you can con
 
 3. Change parameters in `my_profiles/tutorial_project/config.yaml` and `my_profiles/tutorial_project/parameters.yaml`.
 
-       config.yaml:
+       my_profiles/tutorial_project/config.yaml:
        
            configfile: change path to your project parameter.yaml path (my_profiles/tutorial_project/parameter.yaml)
 
-       parameter.yaml:
+       my_profiles/tutorial_project/parameter.yaml:
      
            data_directory: change path to your project data path (data/tutorial_project)
        
@@ -257,7 +273,7 @@ Change directory to the `covSampler` directory if you are not there.
 cd covSampler
 ```
 
-Run covSampler workflow for data processing.
+Run the command for data processing.
 
 ```
 snakemake --profile my_profiles/tutorial_project
@@ -269,7 +285,7 @@ The workflow can take a while to run. When the sequence numbers are in the milli
 
 After data processing, you can change the parameters for subsampling.
 
-    parameter.yaml:
+    my_profiles/tutorial_project/parameter.yaml:
 
         start_subsampling: True
 
@@ -277,17 +293,27 @@ After data processing, you can change the parameters for subsampling.
 
 ## Subsampling
 
-Run covSampler workflow for subsampling.
+Change directory to the `covSampler` directory if you are not there.
+
+```
+cd covSampler
+```
+
+Run the command for subsampling. (This is the second time running the command, the first run is for data processing.)
 
 ```
 snakemake --profile my_profiles/tutorial_project
 ```
 
-And you can see the result subsamples in your specified output file path.
+After calculation, you can see the result subsamples in your specified output file path.
 
-If you want to subsample the same data set multiple times, you can change the subsampling parameters in `parameter.yaml`. Don't forget to change the output file path.
+## Subsampling the same data set multiple times
 
-Then, rerun the workflow to get your new subsamples.
+If you want to subsample the same data set multiple times, you don't need to re-process the data.
+
+You can just change the subsampling parameters in `my_profiles/tutorial_project/parameter.yaml`. Don't forget to change the output file path.
+
+Then, change directory to the `covSampler` directory and run the command again to get your new subsamples.
 
 ```
 snakemake --profile my_profiles/tutorial_project
