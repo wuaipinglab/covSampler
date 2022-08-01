@@ -43,12 +43,10 @@ def main():
         meta = meta[meta['pango_lineage'].isin(lineages_in_tree)]
 
     # --- filter nextclade ---
-    nextclade_errors = pd.read_csv(os.path.join(os.path.abspath(os.path.dirname(args.nextclade_tsv)), 'sequences.errors.csv'))
-    nextclade_errors = nextclade_errors[
-        (~nextclade_errors['errors'].isna()) | (~nextclade_errors['warnings'].isna()) | (~nextclade_errors['failedGenes'].isna())
-        ]
     nextclade = pd.read_csv(args.nextclade_tsv, delimiter='\t')
-    nextclade = nextclade[~nextclade['seqName'].isin(nextclade_errors['seqName'])]
+    nextclade = nextclade[
+        (nextclade['errors'].isna()) & (nextclade['warnings'].isna()) & (nextclade['failedGenes'].isna())
+        ]
 
     # --- get remaining strains ---
     remaining_strains = nextclade[nextclade['seqName'].isin(meta['strain'])]['seqName']

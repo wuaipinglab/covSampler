@@ -24,26 +24,25 @@ rule run_nextclade:
         sequences = os.path.join(config["data_directory"], "rawdata/sequences.fasta"),
         nextclade_dataset = os.path.join(config["data_directory"], "nextclade_sc2_dataset")
     output:
-        nextclade_tsv = os.path.join(config["data_directory"], "nextclade_output/nextclade.tsv")
+        nextclade_tsv = os.path.join(config["data_directory"], "nextclade.tsv")
     params:
         min_length = config["sequence_min_length"],
-        nextclade_dir = os.path.join(config["data_directory"], "nextclade_output")
     threads: 8
     shell:
         """
-        nextclade \
+        nextclade run \
+            {input.sequences} \
             --jobs {threads} \
-            --input-fasta {input.sequences} \
             --input-dataset {input.nextclade_dataset} \
             --min-length {params.min_length} \
-            --output-dir {params.nextclade_dir} \
-            --output-tsv {output.nextclade_tsv}  
+            --output-tsv {output.nextclade_tsv} \
+            --quiet
         """
 
 rule filter_sequences:
     input:
         metadata = os.path.join(config["data_directory"], "rawdata/metadata.tsv"),
-        nextclade_tsv = os.path.join(config["data_directory"], "nextclade_output/nextclade.tsv")
+        nextclade_tsv = os.path.join(config["data_directory"], "nextclade.tsv")
     output:
         strains = os.path.join(config["data_directory"], "strains.txt")
     params:
@@ -63,7 +62,7 @@ rule get_nonsynonymous:
     input:
         genome = "defaults/genome.csv",
         strains = os.path.join(config["data_directory"], "strains.txt"),
-        nextclade_tsv = os.path.join(config["data_directory"], "nextclade_output/nextclade.tsv"),
+        nextclade_tsv = os.path.join(config["data_directory"], "nextclade.tsv"),
         metadata = os.path.join(config["data_directory"], "rawdata/metadata.tsv")
     output:
         nonsynonymous = os.path.join(config["data_directory"], "nonsynonymous.txt")
@@ -96,7 +95,7 @@ rule get_key_sites:
 rule construct_haplotype_sequences:
     input:
         strains = os.path.join(config["data_directory"], "strains.txt"),
-        nextclade_tsv = os.path.join(config["data_directory"], "nextclade_output/nextclade.tsv"),
+        nextclade_tsv = os.path.join(config["data_directory"], "nextclade.tsv"),
         key_sites = os.path.join(config["data_directory"], "key_sites.txt")
     output:
         haplotype_sequences = os.path.join(config["data_directory"], "haplotype_sequences.txt")
@@ -129,7 +128,7 @@ rule get_infos:
     input:
         divergent_pathways = os.path.join(config["data_directory"], "divergent_pathways.csv"),
         metadata = os.path.join(config["data_directory"], "rawdata/metadata.tsv"),
-        nextclade_tsv = os.path.join(config["data_directory"], "nextclade_output/nextclade.tsv")
+        nextclade_tsv = os.path.join(config["data_directory"], "nextclade.tsv")
     output:
         infos = os.path.join(config["data_directory"], "infos.tsv")
     params:
