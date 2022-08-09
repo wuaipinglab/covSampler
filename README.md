@@ -52,7 +52,7 @@ To use covSampler to analyze your own data, you’ll need to prepare two files:
 
   2. A corresponding TSV file with metadata describing each sequence.
 
-See the [data preparation guide](data/README.md) for detailed instructions.
+See the [data preparation guide](docs/tutorial/prep_data.md) for detailed instructions.
 
 ### Run covSampler
 
@@ -64,7 +64,7 @@ After data preparation, you can run the covSampler workflow to subsampling. The 
 
 For the same data set, once you've processed the data, you can perform subsampling multiple times by adjusting  parameters (location, date range, subsampling characteristic et al.) to get the subsamples.
 
-See this [tutorial](my_profiles/README.md) for detailed instructions.
+See this [tutorial](docs/tutorial/run_workflow.md) for detailed instructions.
 
 ## Web application
 
