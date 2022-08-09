@@ -7,35 +7,26 @@ Here, we developed a subsampling method named **covSampler** based on the spatio
 ## Overview
 
 <p align="center">
-<img src="img/workflow.svg" />
+<img src="img/workflow.svg" width="80%" height="80%" />
 </p>
 
 ### Workflow (Figure A)
 
-#### Determination of key genome sites of SARS-CoV-2 (Figure B)
+#### Determination of sites of spreading mutations of SARS-CoV-2 (Figure B)
 
-- Genome sites of nonsynonymous mutations that increased in frequency per week for four consecutive weeks on at least one continent were defined as key sites.
-- The haplotype sequence of each genome is constructed according to these key sites.
+- Genome sites of nonsynonymous mutations that increased in frequency per week for four consecutive weeks on at least one continent are defined as sites of spreading mutations.
+- The haplotype sequence of each genome is constructed according to these sites of spreading mutations.
 
 #### Construction of divergent pathways (Figure C)
 
-- Divergent pathways in covSampler are network-like results of viral clustering constructed by connecting each pair of viral sequences with geographic consistency `(from same administrative  division)`, temporal continuity `(collected <= 14 days apart)` and genetic similarity `(Hamming distance <= 1 between their haplotype sequences)`.
-- Network with only internal links (i.e. individual cluster) --> divergent pathway
+- Divergent pathways in covSampler are network-like results of viral clustering, constructed by connecting each pair of viral sequences that are geographically close `(from the same administrative division)`, temporally close `(collected <= 14 days apart)`, and genetically similar `(Hamming distance <= 1 between their haplotype sequences)`.
+- Network with only internal links (i.e. individual cluster) --> divergent pathway.
 - Each divergent pathway reflects the local dynamic transmission and evolution of viruses over a period of time.
 
 #### Representative and comprehensive subsampling based on the divergent pathways (Figure D)
 
-- During subsampling, the composition of sequences in the original data set was divided into four levels:
-  
-    (1) All sequences in the original data set were divided by continent.
-
-    (2) Sequences in each continent were divided into divergent pathways in the continent.
-
-    (3) Sequences in each divergent pathway were divided by month.
-
-    (4) Sequences in each month within divergent pathways were divided by haplotype.
-
-- Then, each continent, divergent pathway, month and viral haplotype in the original data set was assigned an expected number of subsamples. Representative subsampling and comprehensive subsampling were performed using different strategies to assign the number of subsamples.
+- During subsampling, genomes in the original data set are hierarchically divided into subsampling units, which are groups containing genomes with(in) the same continent, divergent pathway, month and haplotype.
+- Then, each subsampling unit is assigned an desired number of subsamples. Representative subsampling and comprehensive subsampling are performed using different strategies to assign the desired number of subsamples.
 
 ## Usage
 
