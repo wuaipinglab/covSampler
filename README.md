@@ -7,7 +7,7 @@ Here, we developed a subsampling method named **covSampler** based on the spatio
 ## Overview
 
 <p align="center">
-<img src="img/workflow.svg" width="80%" height="80%" />
+<img src="img/workflow.png" width="80%" height="80%" />
 </p>
 
 ### Workflow (Figure A)
