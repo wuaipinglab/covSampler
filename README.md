@@ -73,3 +73,7 @@ We also provide a [web application](https://www.covsampler.net/) of covSampler. 
 ## Acknowledgements
 
 We gratefully acknowledge [NCBI GenBank](https://www.ncbi.nlm.nih.gov/genbank/) and all the authors, originating and submitting laboratories of the SARS-CoV-2 sequences for sharing their work in open databases.
+
+## Citation
+
+[covSampler: A subsampling method with balanced genetic diversity for large-scale SARS-CoV-2 genome data sets](https://academic.oup.com/ve/article/8/2/veac071/6656080?searchresult=1) by Yexiao Cheng et al. Virus Evolution.
