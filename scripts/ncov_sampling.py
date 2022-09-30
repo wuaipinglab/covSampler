@@ -113,6 +113,7 @@ def get_target_ids(args):
                         'BY': 'Omicron',
                         'BZ': 'Omicron',
                         'CA': 'Omicron',
+                        'CB': 'Omicron',
                         'B.1.427': 'Epsilon',
                         'B.1.429': 'Epsilon',
                         'P.2': 'Zeta',
