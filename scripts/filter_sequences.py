@@ -38,7 +38,7 @@ def main():
     # filter meta: pango lineage not in covizu time-scaled tree (optional)
     if args.covizu_tree is not None:
         tree = Phylo.read(args.covizu_tree, 'newick')
-        lineages_in_tree = [str(nodes) for nodes in tree.get_terminals()]
+        lineages_in_tree = [str(node) for node in tree.get_terminals()]
         meta = meta[meta['pango_lineage'].isin(lineages_in_tree)]
 
     # --- filter nextclade ---
