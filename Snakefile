@@ -39,24 +39,53 @@ rule run_nextclade:
             --quiet
         """
 
-rule filter_sequences:
-    input:
-        metadata = os.path.join(config["data_directory"], "rawdata/metadata.tsv"),
-        nextclade_tsv = os.path.join(config["data_directory"], "nextclade.tsv")
-    output:
-        strains = os.path.join(config["data_directory"], "strains.txt")
-    params:
-        genbank_accession = "--include-genbank-accession" if config.get("genbank_accession") else "",
-        covizu_tree = "--covizu-tree "+os.path.join(config["data_directory"], "rawdata/timetree.nwk") if config.get("covizu_tree") else ""
-    shell:
-        """
-        python3 scripts/filter_sequences.py \
-            --metadata {input.metadata} \
-            --nextclade-tsv {input.nextclade_tsv} \
-            {params.genbank_accession} \
-            {params.covizu_tree} \
-            --output {output.strains}
-        """
+if config.get("covizu_tree"):
+    rule modify_covizu_tree:
+        input:
+            covizu_tree = os.path.join(config["data_directory"], "rawdata/timetree.nwk")
+        output:
+            modified_tree = os.path.join(config["data_directory"], "modified_tree.nwk")
+        shell:
+            """
+            python3 scripts/modify_covizu_tree.py \
+                --covizu-tree {input.covizu_tree} \
+                --output {output.modified_tree}
+            """
+    rule filter_sequences:
+        input:
+            metadata = os.path.join(config["data_directory"], "rawdata/metadata.tsv"),
+            nextclade_tsv = os.path.join(config["data_directory"], "nextclade.tsv"),
+            modified_tree = os.path.join(config["data_directory"], "modified_tree.nwk")
+        output:
+            strains = os.path.join(config["data_directory"], "strains.txt")
+        params:
+            genbank_accession = "--include-genbank-accession" if config.get("genbank_accession") else "",
+        shell:
+            """
+            python3 scripts/filter_sequences.py \
+                --metadata {input.metadata} \
+                --nextclade-tsv {input.nextclade_tsv} \
+                --tree {input.modified_tree} \
+                {params.genbank_accession} \
+                --output {output.strains}
+            """
+else:
+    rule filter_sequences:
+        input:
+            metadata = os.path.join(config["data_directory"], "rawdata/metadata.tsv"),
+            nextclade_tsv = os.path.join(config["data_directory"], "nextclade.tsv")
+        output:
+            strains = os.path.join(config["data_directory"], "strains.txt")
+        params:
+            genbank_accession = "--include-genbank-accession" if config.get("genbank_accession") else "",
+        shell:
+            """
+            python3 scripts/filter_sequences.py \
+                --metadata {input.metadata} \
+                --nextclade-tsv {input.nextclade_tsv} \
+                {params.genbank_accession} \
+                --output {output.strains}
+            """
 
 rule get_nonsynonymous:
     input:

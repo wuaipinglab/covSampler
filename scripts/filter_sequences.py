@@ -10,8 +10,8 @@ def main():
     # command line interface
     parser = argparse.ArgumentParser(description='Filter sequences')
     parser.add_argument('--metadata', required=True, help='Metadata file')
-    parser.add_argument('--covizu-tree', help='CoVizu time-scaled tree file')
     parser.add_argument('--nextclade-tsv', required=True, help='Nextclade tsv file')
+    parser.add_argument('--tree', help='Modified tree file')
     parser.add_argument('--include-genbank-accession', action='store_true', help='Include genbank accession')
     parser.add_argument('--output', required=True, help='Remaining strains file')
     args = parser.parse_args()
@@ -35,9 +35,9 @@ def main():
     meta['date'] = meta['date'].astype(str)
     meta = meta[meta['date'].str.contains('20\d\d-\d\d-\d\d', regex=True)]
 
-    # filter meta: pango lineage not in covizu time-scaled tree (optional)
-    if args.covizu_tree is not None:
-        tree = Phylo.read(args.covizu_tree, 'newick')
+    # filter meta: pango lineage not in tree (optional)
+    if args.tree is not None:
+        tree = Phylo.read(args.tree, 'newick')
         lineages_in_tree = [str(node) for node in tree.get_terminals()]
         meta = meta[meta['pango_lineage'].isin(lineages_in_tree)]
 
