@@ -164,6 +164,8 @@ def get_target_ids(args):
                         'ED': 'Omicron',
                         'EE': 'Omicron',
                         'EF': 'Omicron',
+                        'EH': 'Omicron',
+                        'EJ': 'Omicron',
                         'B.1.427': 'Epsilon',
                         'B.1.429': 'Epsilon',
                         'P.2': 'Zeta',
