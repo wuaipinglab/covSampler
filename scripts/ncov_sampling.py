@@ -187,6 +187,7 @@ def get_target_ids(args):
                         'FQ': 'Omicron',
                         'FR': 'Omicron',
                         'FS': 'Omicron',
+                        'FV': 'Omicron',
                         'B.1.427': 'Epsilon',
                         'B.1.429': 'Epsilon',
                         'P.2': 'Zeta',
