@@ -39,28 +39,30 @@ def main():
         meta_cols.append('genbank_accession')
     meta = pd.read_csv(args.metadata, delimiter='\t', usecols=meta_cols, index_col='strain')
     meta = meta[meta.index.isin(seqs_filtered)]
+    meta_dict = meta.to_dict()
 
     # get nextstrain clade and mutations
     nextclade_cols = ['seqName', 'clade', 'substitutions', 'aaSubstitutions', 'aaDeletions']
     nextclade = pd.read_csv(args.nextclade_tsv, delimiter='\t', usecols=nextclade_cols, index_col='seqName')
     nextclade = nextclade[nextclade.index.isin(seqs_filtered)]
     nextclade.fillna('NA', inplace=True)
+    nextclade_dict = nextclade.to_dict()
 
     # get infos
     infos = {}
     for i in seqs_filtered:
         infos[i] = {}
-        infos[i]['region'] = meta.loc[i, 'region_exposure']
-        infos[i]['country'] = meta.loc[i, 'country_exposure']
-        infos[i]['division'] = meta.loc[i, 'division_exposure']
-        infos[i]['date'] = meta.loc[i, 'date']
-        infos[i]['pangoLineage'] = meta.loc[i, 'pango_lineage']
-        infos[i]['nextstrainClade'] = nextclade.loc[i, 'clade']
-        infos[i]['substitutions'] = nextclade.loc[i, 'substitutions']
-        infos[i]['aaSubstitutions'] = nextclade.loc[i, 'aaSubstitutions']
-        infos[i]['aaDeletions'] = nextclade.loc[i, 'aaDeletions']
+        infos[i]['region'] = meta_dict['region_exposure'][i]
+        infos[i]['country'] = meta_dict['country_exposure'][i]
+        infos[i]['division'] = meta_dict['division_exposure'][i]
+        infos[i]['date'] = meta_dict['date'][i]
+        infos[i]['pangoLineage'] = meta_dict['pango_lineage'][i]
+        infos[i]['nextstrainClade'] = nextclade_dict['clade'][i]
+        infos[i]['substitutions'] = nextclade_dict['substitutions'][i]
+        infos[i]['aaSubstitutions'] = nextclade_dict['aaSubstitutions'][i]
+        infos[i]['aaDeletions'] = nextclade_dict['aaDeletions'][i]
         if args.include_genbank_accession:
-            infos[i]['genbankAccession'] = meta.loc[i, 'genbank_accession']
+            infos[i]['genbankAccession'] = meta_dict['genbank_accession'][i]
 
     with open(args.output, 'w') as f:
         if args.include_genbank_accession:

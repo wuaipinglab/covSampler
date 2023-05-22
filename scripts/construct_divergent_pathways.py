@@ -135,9 +135,10 @@ def main():
     meta = meta[meta.index.isin(seq_hap)]
     
     # divide strains by division (province / state)
+    location_dict = meta[['region_exposure', 'country_exposure', 'division_exposure']].to_dict()
     seq_divisions = {}
     for i in seq_hap:
-        division = meta.loc[i, 'region_exposure']+'_'+meta.loc[i, 'country_exposure']+'_'+meta.loc[i, 'division_exposure']
+        division = location_dict['region_exposure'][i]+'_'+location_dict['country_exposure'][i] +'_'+location_dict['division_exposure'][i]
         seq_divisions.setdefault(division, []).append(i)
     
     seq_divisions = sorted(seq_divisions.values(), key=lambda x: len(x), reverse=True)
