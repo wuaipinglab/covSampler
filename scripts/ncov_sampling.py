@@ -4,6 +4,7 @@ subsampling
 
 import os
 import time
+import random
 import argparse
 
 
@@ -30,9 +31,10 @@ def get_target_ids(args):
                 seq_date = seq_items[4]
                 seq_pangolineage = seq_items[5]
                 seq_nextstrainclade = seq_items[6]
-                seq_substitutions = seq_items[7]
-                seq_aasubstitutions = seq_items[8]
-                seq_aadeletions = seq_items[9]
+                seq_whoclade = seq_items[7]
+                seq_substitutions = seq_items[8]
+                seq_aasubstitutions = seq_items[9]
+                seq_aadeletions = seq_items[10]
                 infos[seq_id] = {
                     'region': seq_region,
                     'country': seq_country,
@@ -40,12 +42,13 @@ def get_target_ids(args):
                     'date': seq_date,
                     'pangoLineage': seq_pangolineage,
                     'nextstrainClade': seq_nextstrainclade,
+                    'whoClade': seq_whoclade,
                     'substitutions': seq_substitutions,
                     'aaSubstitutions': seq_aasubstitutions,
                     'aaDeletions': seq_aadeletions
                 }
                 if args.return_genbank_accession:
-                    seq_accession = seq_items[10]
+                    seq_accession = seq_items[11]
                     infos[seq_id]['genbankAccession'] = seq_accession
 
     target_ids = []
@@ -82,132 +85,9 @@ def get_target_ids(args):
             if variant.startswith('Lineage'):
                 # variants of concern or variants of interest (example: Lineage/WHO/Alpha)
                 if variant.split('/')[1] == 'WHO':
-                    PANGO_WHO = {
-                        'B.1.1.7': 'Alpha',
-                        'Q': 'Alpha',
-                        'B.1.351': 'Beta',
-                        'P.1': 'Gamma',
-                        'B.1.617.2': 'Delta',
-                        'AY': 'Delta',
-                        'B.1.1.529': 'Omicron',
-                        'BA': 'Omicron',
-                        'BC': 'Omicron',
-                        'BD': 'Omicron',
-                        'BE': 'Omicron',
-                        'BF': 'Omicron',
-                        'BG': 'Omicron',
-                        'BH': 'Omicron',
-                        'BJ': 'Omicron',
-                        'BK': 'Omicron',
-                        'BL': 'Omicron',
-                        'BM': 'Omicron',
-                        'BN': 'Omicron',
-                        'BP': 'Omicron',
-                        'BQ': 'Omicron',
-                        'BR': 'Omicron',
-                        'BS': 'Omicron',
-                        'BT': 'Omicron',
-                        'BU': 'Omicron',
-                        'BV': 'Omicron',
-                        'BW': 'Omicron',
-                        'BY': 'Omicron',
-                        'BZ': 'Omicron',
-                        'CA': 'Omicron',
-                        'CB': 'Omicron',
-                        'CC': 'Omicron',
-                        'CD': 'Omicron',
-                        'CE': 'Omicron',
-                        'CF': 'Omicron',
-                        'CG': 'Omicron',
-                        'CH': 'Omicron',
-                        'CJ': 'Omicron',
-                        'CK': 'Omicron',
-                        'CL': 'Omicron',
-                        'CM': 'Omicron',
-                        'CN': 'Omicron',
-                        'CP': 'Omicron',
-                        'CQ': 'Omicron',
-                        'CR': 'Omicron',
-                        'CS': 'Omicron',
-                        'CT': 'Omicron',
-                        'CU': 'Omicron',
-                        'CV': 'Omicron',
-                        'CW': 'Omicron',
-                        'CY': 'Omicron',
-                        'CZ': 'Omicron',
-                        'DA': 'Omicron',
-                        'DB': 'Omicron',
-                        'DC': 'Omicron',
-                        'DD': 'Omicron',
-                        'DE': 'Omicron',
-                        'DF': 'Omicron',
-                        'DG': 'Omicron',
-                        'DH': 'Omicron',
-                        'DJ': 'Omicron',
-                        'DK': 'Omicron',
-                        'DL': 'Omicron',
-                        'DM': 'Omicron',
-                        'DN': 'Omicron',
-                        'DP': 'Omicron',
-                        'DQ': 'Omicron',
-                        'DR': 'Omicron',
-                        'DS': 'Omicron',
-                        'DT': 'Omicron',
-                        'DU': 'Omicron',
-                        'DV': 'Omicron',
-                        'DW': 'Omicron',
-                        'DY': 'Omicron',
-                        'DZ': 'Omicron',
-                        'EA': 'Omicron',
-                        'EB': 'Omicron',
-                        'EC': 'Omicron',
-                        'ED': 'Omicron',
-                        'EE': 'Omicron',
-                        'EF': 'Omicron',
-                        'EH': 'Omicron',
-                        'EJ': 'Omicron',
-                        'EN': 'Omicron',
-                        'EP': 'Omicron',
-                        'EQ': 'Omicron',
-                        'ER': 'Omicron',
-                        'ES': 'Omicron',
-                        'ET': 'Omicron',
-                        'EV': 'Omicron',
-                        'EW': 'Omicron',
-                        'EY': 'Omicron',
-                        'EZ': 'Omicron',
-                        'FA': 'Omicron',
-                        'FB': 'Omicron',
-                        'FC': 'Omicron',
-                        'FF': 'Omicron',
-                        'FJ': 'Omicron',
-                        'FK': 'Omicron',
-                        'FM': 'Omicron',
-                        'FN': 'Omicron',
-                        'FQ': 'Omicron',
-                        'FR': 'Omicron',
-                        'FS': 'Omicron',
-                        'FV': 'Omicron',
-                        'B.1.427': 'Epsilon',
-                        'B.1.429': 'Epsilon',
-                        'P.2': 'Zeta',
-                        'B.1.525': 'Eta',
-                        'P.3': 'Theta',
-                        'B.1.526': 'Iota',
-                        'B.1.617.1': 'Kappa',
-                        'C.37': 'Lambda',
-                        'B.1.621': 'Mu',
-                        'BB': 'Mu'
-                    }
                     for i in target_ids:
-                        is_who_var = False
-                        for l in PANGO_WHO:
-                            if infos[i]['pangoLineage'] == l or infos[i]['pangoLineage'].startswith(l+'.'):
-                                l_who = PANGO_WHO[l]
-                                if l_who == variant.split('/')[2]:
-                                    is_who_var = True
-                        if not is_who_var:
-                            to_rm_variant.append(i)
+                        if infos[i]['whoClade'] != variant.split('/')[2]:
+                            to_rm_variant.append(i) 
                 # pango lineage (example: Lineage/Pango_lineage/B.1.1.7)
                 elif variant.split('/')[1] == 'Pango_lineage':
                     for i in target_ids:
@@ -444,12 +324,7 @@ def com_sampling(required_sample_num, seqs, infos, paths_in_continent):
                     if sample_number_in_haplotype_sequence != 0:
                         seq_in_haplotype_sequence = seq_in_haplotype_sequences[v]
                         seq_in_haplotype_sequence.sort()
-                        samples_in_haplotype_sequence = []
-                        sampling_step = int(len(seq_in_haplotype_sequence)/sample_number_in_haplotype_sequence)
-                        for s in range(0, len(seq_in_haplotype_sequence), sampling_step):
-                            samples_in_haplotype_sequence.append(seq_in_haplotype_sequence[s])
-                            if len(samples_in_haplotype_sequence) == sample_number_in_haplotype_sequence:
-                                break
+                        samples_in_haplotype_sequence = random.sample(seq_in_haplotype_sequence, sample_number_in_haplotype_sequence)
                         com_samples.extend(samples_in_haplotype_sequence)
     
     return com_samples
@@ -640,12 +515,7 @@ def rep_sampling(required_sample_num, seqs, infos, paths_in_continent):
                     if sample_number_in_haplotype_sequence != 0:
                         seq_in_haplotype_sequence = seq_in_haplotype_sequences[v]
                         seq_in_haplotype_sequence.sort()
-                        samples_in_haplotype_sequence = []
-                        sampling_step = int(len(seq_in_haplotype_sequence)/sample_number_in_haplotype_sequence)
-                        for s in range(0, len(seq_in_haplotype_sequence), sampling_step):
-                            samples_in_haplotype_sequence.append(seq_in_haplotype_sequence[s])
-                            if len(samples_in_haplotype_sequence) == sample_number_in_haplotype_sequence:
-                                break
+                        samples_in_haplotype_sequence = random.sample(seq_in_haplotype_sequence, sample_number_in_haplotype_sequence)
                         rep_samples.extend(samples_in_haplotype_sequence)
         
     return rep_samples
@@ -672,10 +542,15 @@ def main():
     parser.add_argument('--variants', action='append', help='Variants of subsamples')
     parser.add_argument('--size', type=int, required=True, help='Number of subsamples')
     parser.add_argument('--characteristic', required=True, help='Characteristic of subsampling')
+    parser.add_argument('--seed', type=int, required=True, help='Random seed number')
     parser.add_argument('--temporally-even', action='store_true', help='Temporally even subsampling')
     parser.add_argument('--return-genbank-accession', action='store_true', help='Return genbank accession')
     parser.add_argument('--output', required=True, help='Subsamples file')
     args = parser.parse_args()
+
+    # set pseudorandom seed
+    seed = args.seed
+    random.seed(seed)
 
     # get infos and strains in selected range
     infos, target_ids = get_target_ids(args)
@@ -726,6 +601,7 @@ def main():
         else:
             f.write('## Subsample size: '+str(args.size)+'\n')
         f.write('## Subsampling characteristic: '+args.characteristic+'\n')
+        f.write('## Seed for pseudorandom subsampling: '+str(seed)+'\n')
         if args.temporally_even:
             f.write('## Temporally even: True'+'\n')
         else:

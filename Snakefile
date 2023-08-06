@@ -201,6 +201,7 @@ rule subsampling:
         variants = "".join([" --variants "+"\""+v+"\"" for v in config["subsampling"]["variants"]]) if config["subsampling"].get("variants") else "",
         size = config["subsampling"]["size"],
         characteristic = config["subsampling"]["characteristic"],
+        seed = config["subsampling"]["seed"],
         temporally_even = "--temporally-even" if config["subsampling"].get("temporally_even") else "",
         genbank_accession = "--return-genbank-accession" if config.get("genbank_accession") else ""
     shell:
@@ -216,6 +217,7 @@ rule subsampling:
             {params.variants} \
             --size {params.size} \
             --characteristic {params.characteristic} \
+            --seed {params.seed} \
             {params.temporally_even} \
             {params.genbank_accession} \
             --output {output.subsamples}

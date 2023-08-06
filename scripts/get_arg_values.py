@@ -34,9 +34,7 @@ def main():
                 seq_date = seq_items[4]
                 seq_pangolineage = seq_items[5]
                 seq_nextstrainclade = seq_items[6]
-                seq_substitutions = seq_items[7]
-                seq_aasubsitutions = seq_items[8]
-                seq_aadeletions = seq_items[9]
+                seq_whoclade = seq_items[7]
                 infos[seq_id] = {
                     'region': seq_region,
                     'country': seq_country,
@@ -44,15 +42,14 @@ def main():
                     'date': seq_date,
                     'pangoLineage': seq_pangolineage,
                     'nextstrainClade': seq_nextstrainclade,
-                    'substitutions': seq_substitutions,
-                    'aaSubsitutions': seq_aasubsitutions,
-                    'aaDeletions': seq_aadeletions
+                    'whoClade': seq_whoclade
                 }
 
     locations = []
     dates = []
     pango_lineages = []
     nextstrain_clades = []
+    who_variants = []
     for i in infos:
         region = infos[i]['region']
         country = infos[i]['region']+'/'+infos[i]['country']
@@ -63,6 +60,7 @@ def main():
         dates.append(infos[i]['date'])
         pango_lineages.append(infos[i]['pangoLineage'])
         nextstrain_clades.append(infos[i]['nextstrainClade'])
+        who_variants.append(infos[i]['whoClade'])
 
     # locations
     locations.sort()
@@ -96,10 +94,9 @@ def main():
         for n in nextstrain_clades:
             f.write(n+'\n')
 
-    # variants of concern and variants of interest (WHO)
-    who_variants = [
-        'Alpha', 'Beta', 'Gamma', 'Delta', 'Omicron', 'Epsilon', 'Zeta', 'Eta', 'Theta', 'Iota', 'Kappa', 'Lambda', 'Mu'
-        ]
+    # who clades
+    who_variants = list(set(who_variants))
+    who_variants.sort()
     with open(os.path.join(args.output, 'who_variants.txt'), 'w') as f:
         f.write('WHO_variants'+'\n')
         for v in who_variants:

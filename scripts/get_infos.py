@@ -1,5 +1,5 @@
 '''
-get region, country, division, date, pango lineage, nextstrain clade and mutations of each strain
+get region, country, division, date, pango lineage, nextstrain clade, who clade and mutation of each strain
 '''
 
 import argparse
@@ -41,10 +41,11 @@ def main():
     meta = meta[meta.index.isin(seqs_filtered)]
     meta_dict = meta.to_dict()
 
-    # get nextstrain clade and mutations
-    nextclade_cols = ['seqName', 'clade', 'substitutions', 'aaSubstitutions', 'aaDeletions']
+    # get clade and mutation
+    nextclade_cols = ['seqName', 'clade', 'clade_who', 'substitutions', 'aaSubstitutions', 'aaDeletions']
     nextclade = pd.read_csv(args.nextclade_tsv, delimiter='\t', usecols=nextclade_cols, index_col='seqName')
     nextclade = nextclade[nextclade.index.isin(seqs_filtered)]
+    nextclade['clade_who'] = nextclade['clade_who'].fillna('others')
     nextclade.fillna('NA', inplace=True)
     nextclade_dict = nextclade.to_dict()
 
@@ -58,6 +59,7 @@ def main():
         infos[i]['date'] = meta_dict['date'][i]
         infos[i]['pangoLineage'] = meta_dict['pango_lineage'][i]
         infos[i]['nextstrainClade'] = nextclade_dict['clade'][i]
+        infos[i]['whoClade'] = nextclade_dict['clade_who'][i]
         infos[i]['substitutions'] = nextclade_dict['substitutions'][i]
         infos[i]['aaSubstitutions'] = nextclade_dict['aaSubstitutions'][i]
         infos[i]['aaDeletions'] = nextclade_dict['aaDeletions'][i]
@@ -67,8 +69,8 @@ def main():
     with open(args.output, 'w') as f:
         if args.include_genbank_accession:
             f.write('ID'+'\t'+'region'+'\t'+'country'+'\t'+'division'+'\t'+'date'+'\t'+'pangoLineage'+'\t'
-                +'nextstrainClade'+'\t'+'substitutions'+'\t'+'aaSubstitutions'+'\t'+'aaDeletions'+'\t'
-                +'genbankAccession'+'\n')
+                +'nextstrainClade'+'\t'+'whoClade'+'\t'+'substitutions'+'\t'+'aaSubstitutions'+'\t'
+                +'aaDeletions'+'\t'+'genbankAccession'+'\n')
             for i in infos:
                 f.write(
                     i + '\t'
@@ -78,6 +80,7 @@ def main():
                     + infos[i]['date'] + '\t'
                     + infos[i]['pangoLineage'] + '\t'
                     + infos[i]['nextstrainClade'] + '\t'
+                    + infos[i]['whoClade'] + '\t'
                     + infos[i]['substitutions'] + '\t'
                     + infos[i]['aaSubstitutions'] + '\t'
                     + infos[i]['aaDeletions'] + '\t'
@@ -85,7 +88,7 @@ def main():
                 )
         else:
             f.write('ID'+'\t'+'region'+'\t'+'country'+'\t'+'division'+'\t'+'date'+'\t'+'pangoLineage'+'\t'
-                +'nextstrainClade'+'\t'+'substitutions'+'\t'+'aaSubstitutions'+'\t'+'aaDeletions'+'\n')
+                +'nextstrainClade'+'\t'+'whoClade'+'\t'+'substitutions'+'\t'+'aaSubstitutions'+'\t'+'aaDeletions'+'\n')
             for i in infos:
                 f.write(
                     i + '\t'
@@ -95,6 +98,7 @@ def main():
                     + infos[i]['date'] + '\t'
                     + infos[i]['pangoLineage'] + '\t'
                     + infos[i]['nextstrainClade'] + '\t'
+                    + infos[i]['whoClade'] + '\t'
                     + infos[i]['substitutions'] + '\t'
                     + infos[i]['aaSubstitutions'] + '\t'
                     + infos[i]['aaDeletions'] + '\n'

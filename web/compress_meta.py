@@ -14,7 +14,7 @@ def main():
         for n, line in enumerate(lines):
             if n != 0:
                 seq_items = line.strip().split('\t')
-                seq_id = seq_items[10]
+                seq_id = seq_items[11]
                 seq_date = seq_items[4]
                 seq_region = seq_items[1]                
                 seq_pangolineage = seq_items[5]

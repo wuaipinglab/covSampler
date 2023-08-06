@@ -57,7 +57,7 @@ subsampling:
     # NONSPECIFIC -> False
     #
     # LINEAGE
-    # Lineage format -> a) WHO: - Lineage/WHO/<VOC or VOI>
+    # Lineage format -> a) WHO: - Lineage/WHO/<WHO clade>
     #                   b) Pango lineage: - Lineage/Pango_lineage/<Pango lineage>
     #                   c) Nextstrain clade: - Lineage/Nextstrain_clade/<Nextstrain clade>
     # Lineage examples -> a) WHO: - Lineage/WHO/Alpha
@@ -112,6 +112,10 @@ subsampling:
     characteristic:
         Representative
     
+    # Seed number for pseudorandom subsampling (int)
+    seed:
+        2019
+
     # Temporally even subsampling (bool)
     temporally_even:
         False

@@ -86,6 +86,8 @@ subsampling:
         500
     characteristic:
         Representative
+    seed:
+        2019
     temporally_even:
         False
 ```
@@ -154,25 +156,25 @@ subsampling:
 
 #### subsampling - variants
 * type: False or str
-* description: Variant of subsamples. There are three submodules in the `variants` module: `Nonspecific`, `Lineage`, and `Site`. `Nonspecific` means no restrictions on lineage or mutation of subsamples. In `Lineage` submodule, `WHO (VOC or VOI)`, `Pango lineage` and `Nextstrain clade` are available. In `Site` submodule, `Nucleotide` and `Amino Acid` are available.
+* description: Variant of subsamples. There are three submodules in the `variants` module: `Nonspecific`, `Lineage`, and `Site`. `Nonspecific` means no restrictions on lineage or mutation of subsamples. In `Lineage` submodule, `WHO clade`, `Pango lineage` and `Nextstrain clade` are available. In `Site` submodule, `Nucleotide` and `Amino Acid` are available.
 * format:
     1. Nonspecific: False
     2. Lineage:
-       1. WHO: - Lineage/WHO/\<VOC or VOI\>
+       1. WHO: - Lineage/WHO/\<WHO clade\>
        2. Pango lineage: - Lineage/Pango_lineage/\<Pango lineage\>
        3. Nextstrain clade: - Lineage/Nextstrain_clade/\<Nextstrain clade\>
     3. Site:
        1. Nucleotide: - Site/Nucleotide/\<ref\>\<site\>\<mut\>
        2. Amino acid: - Site/Amino_acid/\<gene\>:\<ref\>\<site\>\<mut\> ("-" = deletion, "*" = stop)
 * examples:
-    * False
-    * \- Lineage/WHO/Alpha
-    * \- Lineage/Pango_lineage/B.1.1.7
-    * \- Lineage/Nextstrain_clade/20I (Alpha, V1)
-    * \- Site/Nucleotide/A23403G
-    * \- Site/Amino_acid/S:N501Y
-    * \- Site/Amino_acid/S:H69-
-    * \- Site/Amino_acid/ORF7a:Q62*
+    * `False`
+    * `- Lineage/WHO/Alpha`
+    * `- Lineage/Pango_lineage/B.1.1.7`
+    * `- Lineage/Nextstrain_clade/20I (Alpha, V1)`
+    * `- Site/Nucleotide/A23403G`
+    * `- Site/Amino_acid/S:N501Y`
+    * `- Site/Amino_acid/S:H69-`
+    * `- Site/Amino_acid/ORF7a:Q62*`
 * note:
     1. For each project, after performing the data processing part, all available values will be recorded in the `data/<project_name>/args/who_variants.txt`, `data/<project_name>/args/pango_lineages.txt`, `data/<project_name>/args/nextstrain_clades.txt`, `data/<project_name>/args/nucleotide.txt` and `data/<project_name>/args/amino_acid.txt`
     2. You can use just one query or put multiple queries together:
@@ -220,6 +222,11 @@ subsampling:
       In addition, you can also perform subsampling multiple times with different parameters (characteristic and/or range) to get the final subsamples. 
 
 * format: Representative or Comprehensive
+
+#### subsampling - seed
+* type: int
+* description: Seed number for pseudorandom subsampling
+* note: covSampler (v2.0.0) applies a pseudorandom strategy for subsampling from each virus cluster. If covSampler is reinitialized with the same seed, it will produce the same results.
 
 #### subsampling - temporally_even
 * type: bool
