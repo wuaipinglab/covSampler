@@ -25,8 +25,10 @@ def main():
 
     # add recombinant lineages to tree
     t = Tree(args.covizu_tree, format=1)
+    leaves = [leaf.name for leaf in t.get_leaves()]
     for r in recomb:
-        t.add_child(name=r, dist=1)
+        if r not in leaves:
+            t.add_child(name=r, dist=1)
 
     # write modified tree
     t.write(outfile=args.output)
